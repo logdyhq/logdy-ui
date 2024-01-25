@@ -1,4 +1,4 @@
-import { CellHandler, Column, Message, Settings } from "./types"
+import { Column, Settings } from "./types"
 import ts from "typescript"
 
 export class Layout {
