@@ -143,7 +143,11 @@ const add = () => {
         name: "",
         handlerTsCode: ""
     }
-    models['new'] = monaco.editor.createModel(EMPTY_COL, "typescript", monaco.Uri.parse("ts:new.ts"))
+
+    if (!models['new']) {
+        models['new'] = monaco.editor.createModel(EMPTY_COL, "typescript", monaco.Uri.parse("ts:new.ts"))
+    }
+
     loadModel(models['new'])
 }
 
@@ -159,20 +163,22 @@ const removeCol = (colId: string) => {
             <div class="header">
                 <button @click="$emit('close')">Close</button>
             </div>
-            <div style="margin: 10px 0;">
+            <div v-if="!selectedColumn" style="margin: 10px 0;">
                 <button @click="add">Add new column</button>
             </div>
             <div>
-                <div v-for="col, k in layout.columns" :id="'container_' + col.name" style="margin-top:10px">
-                    {{ col.name }}
-                    <button @click="edit(col.id)" class="btn-sm">Edit</button>
-                    <button @click="removeCol(col.id)" class="btn-sm">Remove</button>
-                    <button :disabled="k === 0" @click="$emit('move', col.id, -1)" class="btn-sm">Move up</button>
-                    <button :disabled="k === layout.columns.length - 1" @click="$emit('move', col.id, 1)"
-                        class="btn-sm">Move
-                        down</button>
+                <div v-if="!selectedColumn" v-for="col, k in layout.columns" :id="'container_' + col.name"
+                    style="margin-top:10px" class="col-row">
+                    <div class="name">{{ col.name }}</div>
+                    <div class="controls">
+                        <button @click="edit(col.id)" class="btn-sm">Edit</button>
+                        <button @click="removeCol(col.id)" class="btn-sm">Remove</button>
+                        <button :disabled="k === 0" @click="$emit('move', col.id, -1)" class="btn-sm">Move up</button>
+                        <button :disabled="k === layout.columns.length - 1" @click="$emit('move', col.id, 1)"
+                            class="btn-sm">Move
+                            down</button>
+                    </div>
                 </div>
-                <hr />
                 <div v-if="selectedColumn">
                     <div class="row">
                         <div>Name</div>
@@ -230,6 +236,17 @@ const removeCol = (colId: string) => {
         -o-box-sizing: border-box;
         -ms-box-sizing: border-box;
         box-sizing: border-box;
+    }
+
+    .col-row {
+        display: flex;
+
+        .name {
+            width: 200px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
     }
 
     .inner-drawer {

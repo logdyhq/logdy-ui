@@ -12,7 +12,10 @@ export interface Notification {
 export const useMainStore = defineStore("main", () => {
 
     const modalShow = ref<boolean>(false)
-    const demoMode = ref<boolean>(document.location.host.indexOf('demo') >= 0 || true)
+    const demoMode = ref<boolean>(
+        document.location.host.indexOf('demo') >= 0 ||
+        document.location.search.indexOf('demo') >= 0
+    )
     const demoStatus = ref<"started" | "stopped">("started")
 
     const confirmMsg = ref<string>("");
