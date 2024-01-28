@@ -5,6 +5,10 @@ import App from './App.vue'
 import VueHighlightJS from 'vue3-highlightjs'
 import 'highlight.js/styles/vs2015.css'
 import moment from 'moment'
+import { createPinia } from 'pinia'
 
 window.moment = moment
-createApp(App).use(VueHighlightJS).mount('#app')
+createApp(App)
+    .use(VueHighlightJS)
+    .use(createPinia())
+    .mount('#app')

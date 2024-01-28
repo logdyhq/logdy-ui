@@ -17,6 +17,7 @@ const monacoEditorPlugin = isObjectWithDefaultFunction(monacoEditorPluginModule)
 export default defineConfig({
   plugins: [vue(), monacoEditorPlugin({ languageWorkers: ['typescript'] })],
   server: {
+    host: "0.0.0.0",
     proxy: {
       '/ws': {
         target: 'ws://localhost:8080',

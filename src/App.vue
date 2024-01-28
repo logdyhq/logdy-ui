@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { Row, FacetValues, Settings, Facet, Message, CellHandler, Column } from "./types"
+import { Row, FacetValues, Facet, Message, CellHandler, Column } from "./types"
 import { Layout } from "./config"
 import { Storage } from "./storage"
 import Drawer from "./components/Drawer.vue"
 import SettingsDrawer from "./components/SettingsDrawer.vue"
 import FacetComponent from "./components/Facet.vue"
 import StatusIndicator from "./components/StatusIndicator.vue"
+import DemoBar from "./components/DemoBar.vue"
+import Confirm from "./components/ConfirmModal.vue"
+import { useMainStore } from './store';
+import * as demo from "./demo";
+
+const store = useMainStore()
 
 const rows = ref<Row[]>([])
 const facets = ref<FacetValues>({})
-const settings = ref<Settings>({
-  maxMessages: 1000,
-  leftColWidth: 180,
-})
 const table = ref<HTMLElement>()
 const drawer = ref<{
   row?: Row
@@ -25,7 +27,7 @@ const status = ref<"connected" | "not connected">("not connected")
 
 const storage = new Storage<Message>('logs')
 const storageLayout = new Storage<Layout>('layout')
-const layout = ref<Layout>(new Layout('main'))
+const layout = ref<Layout>(new Layout('main', { leftColWidth: 300, maxMessages: 1000 }))
 
 const addToFacet = (f: Facet) => {
   if (!facets.value[f.name]) {
@@ -72,7 +74,7 @@ const addMessage = (m: Message) => {
     return
   }
 
-  if (rows.value.length >= settings.value.maxMessages) {
+  if (rows.value.length >= layout.value.settings.maxMessages) {
     removeMessage()
   }
 
@@ -82,6 +84,7 @@ const addMessage = (m: Message) => {
       h.facets?.forEach(addToFacet)
       return h
     } catch (e) {
+      console.log(e)
       return { text: "error" }
     }
   })
@@ -91,6 +94,7 @@ const addMessage = (m: Message) => {
       h.facets?.forEach(addToFacet)
       return h
     } catch (e) {
+      console.log(e)
       return { text: "error" }
     }
   })
@@ -117,9 +121,11 @@ const removeMessage = () => {
 }
 
 const clearAll = () => {
-  rows.value = []
-  facets.value = {}
-  storage.removeAll()
+  store.confirm("Are you sure you want to clear all logs?", () => {
+    rows.value = []
+    facets.value = {}
+    storage.removeAll()
+  })
 }
 
 const loadStorage = () => {
@@ -128,15 +134,12 @@ const loadStorage = () => {
   })
 }
 
-const loadConfig = () => {
+const loadConfig = (load?: Layout) => {
 
-  let layouts = storageLayout.load()
+  let layouts = load ? [load] : storageLayout.load()
 
   if (layouts[0]) {
     layout.value.loadFromObj(layouts[0])
-    if (layouts[0].settings) {
-      settings.value = layouts[0].settings
-    }
   } else {
     layout.value.add({
       id: "",
@@ -155,13 +158,12 @@ const displayRows = computed(() => {
       if (el.selected) {
         selectedFacets.push(i + "_" + el.label)
       }
-
     })
   }
 
   return rows.value.filter(r => {
     if (selectedFacets.length === 0) return true
-    return r.facets.map(f => f.name + "_" + f.value).filter(a => selectedFacets.includes(a)).length > 0
+    return r.facets.map(f => f.name + "_" + f.value).filter(a => selectedFacets.includes(a)).length === selectedFacets.length
   }).filter(r => {
     if (searchbar.value.length < 3) {
       return true
@@ -184,14 +186,12 @@ const endDragging = () => {
   document.getElementById("app")?.classList.remove('noselect')
   document.removeEventListener('mousemove', handleDragging)
 
-
-  layout.value.settings = settings.value
   storageLayout.removeAll()
   storageLayout.add(layout.value as Layout)
 }
 
 const handleDragging = (e: MouseEvent) => {
-  settings.value.leftColWidth += (e.movementX)
+  layout.value.settings.leftColWidth += (e.movementX)
 }
 
 const columnEdited = (col: Column) => {
@@ -219,10 +219,6 @@ const render = () => {
   loadStorage()
 }
 
-
-loadConfig()
-render()
-
 const connectToWs = () => {
   const socket = new WebSocket('ws://' + window.location.host + '/ws');
   status.value = 'not connected'
@@ -241,8 +237,7 @@ const connectToWs = () => {
     }
   }
 
-  socket.onerror = (ev: Event) => {
-    console.log(ev)
+  socket.onerror = (_: Event) => {
     setTimeout(() => {
       console.log("Reconnecting to WS")
       connectToWs()
@@ -256,9 +251,40 @@ const connectToWs = () => {
   }
 }
 
-onMounted(async () => {
+const loadDemoMode = () => {
+  status.value = 'connected'
+  const numPerSec = 2
+  layout.value = demo.getLayout()
 
-  connectToWs()
+  setInterval(() => {
+    if (store.demoStatus === 'stopped') {
+      return
+    }
+    addDemoData()
+  }, (1 / numPerSec) * 1000)
+}
+
+const addDemoData = (count: number = 1) => {
+  while (count--) {
+    let data = demo.generateData(true)
+    addMessage({
+      content: JSON.stringify(data),
+      is_json: true,
+      message_type: 0,
+      json_content: data
+    })
+  }
+}
+
+onMounted(async () => {
+  if (store.demoMode) {
+    loadDemoMode()
+  } else {
+    connectToWs()
+    loadConfig()
+  }
+
+  render()
 
   document.addEventListener("keyup", (event: KeyboardEvent) => {
     if (event.code === 'Escape') {
@@ -280,40 +306,51 @@ const stickToBottom = () => {
 </script>
 
 <template>
-  <div class="top-bar">
-    <div class="left">
-      <button @click="clearAll">Clear all</button>
-      {{ displayRows.length }} of {{ rows.length }}
+  <!-- <Modal @close="store.modalShow.value = false" v-if="store.modalShow.value" /> -->
+  <Confirm />
+  <DemoBar v-if="store.demoMode" @start="store.demoStatus = 'started'" @stop="store.demoStatus = 'stopped'"
+    @add="addDemoData(100)" />
+  <div :class="{ 'demo': store.demoMode }">
+    <div class="top-bar">
+      <div class="left">
+        <div class="logo">
+          <a href="https://logdy.dev" target="_blank"><img src="/logdy-transparent.png" /></a>
+        </div>
+      </div>
+      <div class="right">
+        <input type="text" class="searchbar" v-model="searchbar" placeholder="Search logs..." />
+      </div>
+      <div class="end">
+        <button @click="clearAll">Clear all logs</button>
+        <StatusIndicator :status="status" />
+        <button @click="settingsDrawer = true">Settings</button>
+      </div>
     </div>
-    <div class="right">
-      <input type="text" class="searchbar" v-model="searchbar" placeholder="Search logs..." />
+    <div class="layout" @mouseup="endDragging">
+      <div class="left-col" :style="{ width: layout.settings.leftColWidth + 'px' }">
+        <div class="counter">
+          <span>Showing {{ displayRows.length }} out of {{ rows.length }} logs</span>
+        </div>
+        <FacetComponent :facets="facets" />
+      </div>
+      <div class="mid-col" @mousedown="startDragging"></div>
+      <div class="right-col" ref="table">
+        <div class="btn stick" @click="stickToBottom">Stick to bottom</div>
+        <table class="table" cellspacing="0" cellpadding="0">
+          <tr>
+            <th v-for="col in columns" :style="{ width: col.width + 'px' }">{{ col.name }}</th>
+          </tr>
+          <tr class="row" v-for="row in displayRows" @click="drawer.row = row">
+            <td class="cell" v-for="_, k2 in columns">
+              <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(layout as Layout)"
+        @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" />
+      <Drawer :row="drawer.row" :layout="(layout as Layout)" @close="drawer.row = undefined" />
     </div>
-    <div class="end">
-      <StatusIndicator :status="status" />
-      <button @click="settingsDrawer = true">Settings</button>
-    </div>
-  </div>
-  <div class="layout" @mouseup="endDragging">
-    <div class="left-col" :style="{ width: settings.leftColWidth + 'px' }">
-      <FacetComponent :facets="facets" />
-    </div>
-    <div class="mid-col" @mousedown="startDragging"></div>
-    <div class="right-col" ref="table">
-      <div class="btn stick" @click="stickToBottom">Stick to bottom</div>
-      <table class="table" cellspacing="0" cellpadding="0">
-        <tr>
-          <th v-for="col in columns" :style="{ width: col.width + 'px' }">{{ col.name }}</th>
-        </tr>
-        <tr class="row" v-for="row in displayRows" @click="drawer.row = row">
-          <td class="cell" v-for="_, k2 in columns">
-            <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
-          </td>
-        </tr>
-      </table>
-    </div>
-    <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(layout as Layout)"
-      @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" />
-    <Drawer :row="drawer.row" :layout="(layout as Layout)" @close="drawer.row = undefined" />
   </div>
 </template>
 
@@ -325,12 +362,18 @@ const stickToBottom = () => {
   flex-direction: row;
   padding: 8px;
 
+
   &div {
     flex: 1 1 auto;
   }
 
   .left {
-    width: 200px;
+    .logo img {
+      height: 40px;
+    }
+
+    margin-left: 20px;
+    margin-right: 20px;
   }
 
   .right {
@@ -352,9 +395,9 @@ const stickToBottom = () => {
   }
 
   .end {
-
     display: flex;
-
+    align-items: center;
+    margin: 0 0px 0 10px;
   }
 
 }
@@ -380,6 +423,10 @@ const stickToBottom = () => {
     // max-width: 180px;
     border-right: 1px solid var(--hl-bg);
     padding-right: 5px;
+
+    .counter {
+      text-align: center;
+    }
 
   }
 

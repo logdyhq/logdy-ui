@@ -5,15 +5,16 @@ export class Layout {
     name: string;
     columns: Column[] = [];
 
-    settings?: Settings;
+    settings: Settings;
 
-    constructor(name: string, settings?: Settings) {
+    constructor(name: string, settings: Settings) {
         this.name = name
         this.settings = settings;
     }
 
     loadFromObj(obj: any) {
         this.name = obj.name
+        this.settings = obj.settings
         this.columns = obj.columns.map((c: Column) => {
             return this.prepareColumn(c)
         })

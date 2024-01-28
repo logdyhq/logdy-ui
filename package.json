@@ -9,9 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@faker-js/faker": "^8.4.0",
     "@types/moment": "^2.13.0",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
+    "pinia": "^2.1.7",
     "sass": "^1.69.7",
     "vue": "^3.3.11",
     "vue3-highlightjs": "^1.0.5"
