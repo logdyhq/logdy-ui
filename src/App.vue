@@ -11,6 +11,7 @@ import DemoBar from "./components/DemoBar.vue"
 import Confirm from "./components/ConfirmModal.vue"
 import { useMainStore } from './store';
 import * as demo from "./demo";
+import loadAnalytics from './analytics';
 
 const store = useMainStore()
 
@@ -279,7 +280,9 @@ const addDemoData = (count: number = 1) => {
 onMounted(async () => {
   if (store.demoMode) {
     loadDemoMode()
+    loadAnalytics(true)
   } else {
+    loadAnalytics(false)
     connectToWs()
     loadConfig()
   }
