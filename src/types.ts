@@ -7,7 +7,7 @@ export type Settings = {
 }
 
 export type Message = {
-    message_type: number,
+    log_type: number,
     content: string,
     json_content?: any,
     is_json: boolean

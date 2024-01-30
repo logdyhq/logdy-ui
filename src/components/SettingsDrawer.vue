@@ -28,7 +28,7 @@ const EMPTY_COL = `(line: Message): CellHandler => {
 
 const LIBS = `
     type Message = {
-        message_type: number,
+        log_type: number,
         content: string,
         json_content?: any,
         is_json: boolean

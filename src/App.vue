@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Row, FacetValues, Facet, Message, CellHandler, Column } from "./types"
 import { Layout } from "./config"
 import { Storage } from "./storage"
@@ -9,7 +9,7 @@ import FacetComponent from "./components/Facet.vue"
 import StatusIndicator from "./components/StatusIndicator.vue"
 import DemoBar from "./components/DemoBar.vue"
 import Confirm from "./components/ConfirmModal.vue"
-import { useMainStore } from './store';
+import { useMainStore, InitSettings } from './store';
 import * as demo from "./demo";
 import loadAnalytics from './analytics';
 
@@ -24,7 +24,6 @@ const drawer = ref<{
 const searchbar = ref<string>("")
 const settingsDrawer = ref<boolean>(false)
 const columns = ref<Column[]>([])
-const status = ref<"connected" | "not connected">("not connected")
 
 const storage = new Storage<Message>('logs')
 const storageLayout = new Storage<Layout>('layout')
@@ -222,18 +221,18 @@ const render = () => {
 
 const connectToWs = () => {
   const socket = new WebSocket('ws://' + window.location.host + '/ws');
-  status.value = 'not connected'
+  store.status = 'not connected'
   var wasOpened = false
 
   socket.onopen = () => {
     wasOpened = true
-    status.value = 'connected'
+    store.status = 'connected'
     render()
   }
 
   socket.onclose = () => {
     if (socket.CLOSED && wasOpened) {
-      status.value = 'not connected'
+      store.status = 'not connected'
       connectToWs()
     }
   }
@@ -246,14 +245,27 @@ const connectToWs = () => {
   }
 
   socket.onmessage = (msg: MessageEvent) => {
-    let m = JSON.parse(msg.data) as Message
-    tryAddMessage(m)
-    storage.add(m)
+    let m = JSON.parse(msg.data)
+
+    switch (m.message_type) {
+      case "init":
+        console.debug('Received init message', m)
+        m = m as InitSettings
+        break
+      case "log":
+        tryAddMessage(m as Message)
+        storage.add(m)
+        break
+      default:
+        console.error(m)
+        throw new Error("Unrecognized message")
+    }
+
   }
 }
 
 const loadDemoMode = () => {
-  status.value = 'connected'
+  store.status = 'connected'
   const numPerSec = 2
   layout.value = demo.getLayout()
 
@@ -271,19 +283,25 @@ const addDemoData = (count: number = 1) => {
     addMessage({
       content: JSON.stringify(data),
       is_json: true,
-      message_type: 0,
+      log_type: 0,
       json_content: data
     })
   }
 }
+
+watch(() => store.initSettings?.received, (newVal?: boolean) => {
+  if (newVal && store.initSettings?.analyticsEnabled) {
+    loadAnalytics(false)
+  }
+})
 
 onMounted(async () => {
   if (store.demoMode) {
     loadDemoMode()
     loadAnalytics(true)
   } else {
-    loadAnalytics(false)
     connectToWs()
+    loadAnalytics(false)
     loadConfig()
   }
 
@@ -325,7 +343,7 @@ const stickToBottom = () => {
       </div>
       <div class="end">
         <button @click="clearAll">Clear all logs</button>
-        <StatusIndicator :status="status" />
+        <StatusIndicator :status="store.status" />
         <button @click="settingsDrawer = true">Settings</button>
       </div>
     </div>

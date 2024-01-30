@@ -9,6 +9,11 @@ export interface Notification {
     type?: "info" | "error" | "warning" | "success"
 }
 
+export interface InitSettings {
+    received: boolean;
+    analyticsEnabled: boolean;
+}
+
 export const useMainStore = defineStore("main", () => {
 
     // const modalShow = ref<boolean>(false)
@@ -20,6 +25,11 @@ export const useMainStore = defineStore("main", () => {
 
     const confirmMsg = ref<string>("");
     const confirmShow = ref<boolean>(false);
+
+    const status = ref<"connected" | "not connected">("not connected")
+
+    const initSettings = ref<InitSettings>()
+
     let confirmFn: (() => void) | null = null;
 
     const confirm = (msg: string, fn: () => void) => {
@@ -45,6 +55,9 @@ export const useMainStore = defineStore("main", () => {
         confirmProcess,
 
         demoMode,
-        demoStatus
+        demoStatus,
+        status,
+
+        initSettings
     };
 });
