@@ -5,7 +5,7 @@ import * as monaco from 'monaco-editor';
 
 import jsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import { Column } from "../types";
+import { Column, Settings } from "../types";
 import { momentdts } from "../moment.lib.ts";
 
 self.MonacoEnvironment = {
@@ -51,15 +51,17 @@ let editor: monaco.editor.IStandaloneCodeEditor;
 let models: Record<string, monaco.editor.ITextModel> = {};
 
 let selectedColumn = ref<Column>()
+let settings = ref<Settings>({ leftColWidth: 200, maxMessages: 1000 })
 
 const props = defineProps<{
-    layout: Layout
+    layout: Layout,
 }>()
 
 
 const emit = defineEmits<{
     (e: 'close'): void
     (e: 'edit', column: Column): void
+    (e: 'settings-update', settings: Settings): void
     (e: 'remove', columnId: string): void
     (e: 'move', columnId: string, diff: number): void
 }>()
@@ -90,6 +92,7 @@ onMounted(() => {
         minimap: { enabled: false },
     });
 
+    cancelSettings()
 })
 
 onUnmounted(() => {
@@ -115,6 +118,14 @@ const save = () => {
     })!.getValue()
     emit('edit', selectedColumn.value)
     selectedColumn.value = undefined
+}
+
+const saveSettings = () => {
+    emit('settings-update', settings.value!)
+}
+
+const cancelSettings = () => {
+    settings.value = { ...props.layout.settings }
 }
 
 const loadModel = (model: monaco.editor.ITextModel) => {
@@ -163,10 +174,22 @@ const removeCol = (colId: string) => {
             <div class="header">
                 <button @click="$emit('close')">Close</button>
             </div>
+
+            <div class="settings" v-if="settings && !selectedColumn">
+                <div>Maximum number of log messages stored</div>
+                <div>
+                    <input class="input" v-model="settings.maxMessages" type="number" />
+                </div>
+                <div class="buttons">
+                    <button @click="saveSettings">Save settings</button>
+                    <button @click="cancelSettings">Cancel</button>
+                </div>
+                <hr />
+            </div>
             <div v-if="!selectedColumn" style="margin: 10px 0;">
                 <button @click="add">Add new column</button>
             </div>
-            <div>
+            <div class="column-edit">
                 <div v-if="!selectedColumn" v-for="col, k in layout.columns" :id="'container_' + col.name"
                     style="margin-top:10px" class="col-row">
                     <div class="name">{{ col.name }}</div>
@@ -224,6 +247,22 @@ const removeCol = (colId: string) => {
 
     h4 {
         margin: 2px;
+    }
+
+    .settings {
+        .buttons {
+            margin-top: 10px;
+
+            button {
+                margin-right: 5px;
+            }
+        }
+    }
+
+    .column-edit {
+        button {
+            margin-right: 5px;
+        }
     }
 
     .input {

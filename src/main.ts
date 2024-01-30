@@ -8,6 +8,8 @@ import moment from 'moment'
 import { createPinia } from 'pinia'
 
 window.moment = moment
+window.document.title = 'Logdy'
+
 createApp(App)
     .use(VueHighlightJS)
     .use(createPinia())

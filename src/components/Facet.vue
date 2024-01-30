@@ -47,10 +47,30 @@ const formatNumber = (num: number): string => {
             </div>
         </div>
     </div>
+    <div class="nofacets" v-if="facetsSorted.length === 0">
+        No facets defined<br />
+        <span>You can define facets per column in the settings</span>
+    </div>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
+.nofacets {
+    text-align: center;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 30px 40px 0 40px;
+    font-size: 22px;
+    border-top: 1px solid var(--hl-bg);
+
+    span {
+        font-size: 14px;
+    }
+}
+
 .facet {
+
+    border-top: 1px solid var(--hl-bg);
+
     font-size: 13px;
     line-height: 16px;
     cursor: pointer;

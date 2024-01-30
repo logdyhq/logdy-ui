@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { Row, FacetValues, Facet, Message, CellHandler, Column } from "./types"
+import { Row, FacetValues, Facet, Message, CellHandler, Column, Settings } from "./types"
 import { Layout } from "./config"
 import { Storage } from "./storage"
 import Drawer from "./components/Drawer.vue"
@@ -212,6 +212,13 @@ const columnRemoved = (colId: string) => {
   render()
 }
 
+const settingsUpdate = (settings: Settings) => {
+  layout.value.settings = settings
+  storageLayout.removeAll()
+  storageLayout.add(layout.value as Layout)
+  render()
+}
+
 const render = () => {
   rows.value = []
   facets.value = {}
@@ -337,6 +344,9 @@ const stickToBottom = () => {
         <div class="logo">
           <a href="https://logdy.dev" target="_blank"><img src="/logdy-transparent.png" /></a>
         </div>
+        <div class="docs">
+          <a href="https://logdy.dev/docs/quick-start">Open docs</a>
+        </div>
       </div>
       <div class="right">
         <input type="text" class="searchbar" v-model="searchbar" placeholder="Search logs..." />
@@ -369,7 +379,7 @@ const stickToBottom = () => {
         </table>
       </div>
       <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(layout as Layout)"
-        @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" />
+        @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate" />
       <Drawer :row="drawer.row" :layout="(layout as Layout)" @close="drawer.row = undefined" />
     </div>
   </div>
@@ -389,8 +399,19 @@ const stickToBottom = () => {
   }
 
   .left {
+    display: flex;
+    align-items: center;
+
     .logo img {
       height: 40px;
+    }
+
+    .docs {
+      margin-left: 10px;
+      font-size: 12px;
+      border: 1px solid var(--hl-bg);
+      padding: 4px 8px;
+      border-radius: 6px;
     }
 
     margin-left: 20px;
@@ -440,13 +461,13 @@ const stickToBottom = () => {
 
     overflow: auto;
     overflow-x: hidden;
-    min-width: 100px;
-    // max-width: 180px;
+    min-width: 150px;
     border-right: 1px solid var(--hl-bg);
     padding-right: 5px;
 
     .counter {
       text-align: center;
+      padding-bottom: 10px;
     }
 
   }
@@ -470,10 +491,19 @@ const stickToBottom = () => {
       font-family: 'Roboto mono', sans-serif;
       font-size: 12px;
       border: none;
+      border-collapse: separate;
+      border-spacing: 0;
 
       td,
       th {
         padding: 1px 2px;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        background-color: var(--hl-bg);
+        padding: 2px 0;
       }
 
       td div {
