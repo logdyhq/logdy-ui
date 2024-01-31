@@ -167,17 +167,32 @@ const loadConfig = (load?: Layout) => {
 
 const displayRows = computed(() => {
   const selectedFacets: string[] = []
+  const selectedFacets2: Record<string, string[]> = {}
   for (let i in facets.value) {
     facets.value[i].items.forEach(el => {
       if (el.selected) {
         selectedFacets.push(i + "_" + el.label)
+        if (!selectedFacets2[i]) {
+          selectedFacets2[i] = []
+        }
+        selectedFacets2[i].push(el.label)
       }
     })
   }
 
   return rows.value.filter(r => {
     if (selectedFacets.length === 0) return true
-    return r.facets.map(f => f.name + "_" + f.value).filter(a => selectedFacets.includes(a)).length === selectedFacets.length
+    let sel = { ...selectedFacets2 }
+    let cnt = Object.keys(sel).length
+
+    r.facets.forEach(f => {
+      console.log(sel, f)
+      if (sel[f.name] && sel[f.name].includes(f.value)) {
+        cnt--
+      }
+    })
+
+    return cnt === 0
   }).filter(r => {
     if (searchbar.value.length < 3) {
       return true

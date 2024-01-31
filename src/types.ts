@@ -90,5 +90,5 @@ export type Row = {
     msg: Message,
     cells: CellHandler[], // these are the columns in the table
     fields: CellHandler[], // these are the fields visible only in the drawer
-    facets: Facet[]
+    facets: Facet[] // these are facets cumulated from all cells
 }
