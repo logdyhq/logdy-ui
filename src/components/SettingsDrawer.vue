@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref, watch } from "vue";
 import { Layout } from "../config"
 import * as monaco from 'monaco-editor';
 
 import jsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import { Column, Settings } from "../types";
+import { Column, Settings, Middleware } from "../types";
 import { momentdts } from "../moment.lib.ts";
 
 self.MonacoEnvironment = {
@@ -25,38 +25,78 @@ self.MonacoEnvironment = {
 const EMPTY_COL = `(line: Message): CellHandler => {
     return { text: "-" }
 }`
+const EMPTY_MIDDLEWARE = `(line: Message): Message | void => {
+    return line;
+}`
 
 const LIBS = `
-    type Message = {
-        log_type: number,
-        content: string,
-        json_content?: any,
-        is_json: boolean
-    }
+type Message = {
+    /**
+     * Whether a log was produced as STDOUT (=1) or STDERR (=2)
+     */
+    log_type: number,
+    /**
+     * Raw content of the log line
+     */
+    content: string,
+    /**
+     * If the content is in json format, 
+     * this field will be automatically populated with the parsed value
+     */
+    json_content?: any,
+    /**
+     * Specifies whether the 'content' field is in json format
+     */
+    is_json: boolean
+}
 
-    type CellHandler = {
-        text: string,
-        isJson?: boolean,
-        style?: object,
-        facets?: Facet[]
-    }
-    
-    type Facet = {
-        name: string,
-        value: string
-    }
+type CellHandler = {
+    /**
+     * The value that will be presented in the table cell or log drawer
+     */
+    text: string,
+    /**
+     * Whether the value is in JSON format
+     * if so, a better formatting will be applied in the Log drawer
+     */
+    isJson?: boolean,
+    /** 
+     * Special styles that will be applied to a particular cell
+     * in the table. For example { "background": "red" }, will make the cell
+     * background red.
+     */
+    style?: object,
+    /**
+     * A list of Facets that for a particular line
+     */
+    facets?: Facet[]
+}
+
+
+type Facet = {
+    /**
+     * A facet name, will be used to group values under same label
+     */
+    name: string,
+    /**
+     * A facet value, will be used to automatically build filters
+     */
+    value: string
+}
     `
 
 let editor: monaco.editor.IStandaloneCodeEditor;
+let editorMiddleware: monaco.editor.IStandaloneCodeEditor;
 let models: Record<string, monaco.editor.ITextModel> = {};
+const settingsChanged = ref<boolean>(false)
 
 let selectedColumn = ref<Column>()
-let settings = ref<Settings>({ leftColWidth: 200, maxMessages: 1000 })
+let selectedMiddleware = ref<Middleware>()
+let settings = ref<Settings>({ leftColWidth: 200, maxMessages: 1000, middlewares: [] })
 
 const props = defineProps<{
     layout: Layout,
 }>()
-
 
 const emit = defineEmits<{
     (e: 'close'): void
@@ -66,7 +106,7 @@ const emit = defineEmits<{
     (e: 'move', columnId: string, diff: number): void
 }>()
 
-onMounted(() => {
+const createEditor = (elId: string): monaco.editor.IStandaloneCodeEditor => {
     monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
         noSemanticValidation: true,
         noSyntaxValidation: false,
@@ -86,13 +126,27 @@ onMounted(() => {
         monaco.editor.createModel(LIBS, "typescript", uri);
     }
 
-    editor = monaco.editor.create(document.getElementById('editor')!, {
+    return monaco.editor.create(document.getElementById(elId)!, {
         theme: 'vs-dark',
         automaticLayout: true,
         minimap: { enabled: false },
     });
+}
+
+onMounted(() => {
+
+    editor = createEditor('editor')
+    editorMiddleware = createEditor('middleware-editor')
 
     cancelSettings()
+
+
+    watch(() => settings.value.maxMessages, () => {
+        settingsChanged.value = true
+    })
+    watch(() => settings.value.middlewares, () => {
+        settingsChanged.value = true
+    })
 })
 
 onUnmounted(() => {
@@ -106,7 +160,7 @@ const edit = (id: string) => {
     if (!models[id]) {
         models[id] = monaco.editor.createModel(props.layout.getColumn(id).handlerTsCode!, "typescript", monaco.Uri.parse("ts:" + id + ".ts"))
     }
-    loadModel(models[id])
+    loadModel(editor, models[id], 'editor')
 }
 
 const save = () => {
@@ -125,15 +179,17 @@ const saveSettings = () => {
 }
 
 const cancelSettings = () => {
-    settings.value = { ...props.layout.settings }
+    cancelMiddleware()
+    settings.value = JSON.parse(JSON.stringify(props.layout.settings))
+    setTimeout(() => { settingsChanged.value = false }, 10)
 }
 
-const loadModel = (model: monaco.editor.ITextModel) => {
+const loadModel = (editor: monaco.editor.IStandaloneCodeEditor, model: monaco.editor.ITextModel, elId: string) => {
     editor.setModel(model)
     const lc = model.getLineCount()
     let newh = (lc > 20 ? 20 : lc) * 18
     editor.layout({
-        width: document.getElementById('editor')!.clientWidth,
+        width: document.getElementById(elId)!.clientWidth,
         height: newh
     })
     editor.getAction('editor.action.formatDocument')!.run();
@@ -142,7 +198,7 @@ const loadModel = (model: monaco.editor.ITextModel) => {
         const lc = model.getLineCount()
         let newh = (lc > 20 ? 20 : lc) * 18
         editor.layout({
-            width: document.getElementById('editor')!.clientWidth,
+            width: document.getElementById(elId)!.clientWidth,
             height: newh
         })
     })
@@ -159,11 +215,65 @@ const add = () => {
         models['new'] = monaco.editor.createModel(EMPTY_COL, "typescript", monaco.Uri.parse("ts:new.ts"))
     }
 
-    loadModel(models['new'])
+    loadModel(editor, models['new'], 'editor')
 }
 
 const removeCol = (colId: string) => {
     emit('remove', colId)
+}
+
+const editMiddleware = (id: string) => {
+    let m = settings.value.middlewares.find(m => m.id === id)
+    if (!m) {
+        throw new Error('Not found')
+    }
+    selectedMiddleware.value = { ...m }
+    if (!models[id]) {
+        models[id] = monaco.editor.createModel(m?.handlerTsCode!, "typescript", monaco.Uri.parse("ts:" + id + ".ts"))
+    }
+    loadModel(editorMiddleware, models[id], 'middleware-editor')
+}
+
+const removeMiddleware = (mid: string) => {
+    settingsChanged.value = true
+    delete models[mid]
+    let idx = settings.value.middlewares.findIndex(m => m.id === mid)
+
+    settings.value.middlewares.splice(idx, 1)
+}
+
+const saveMiddleware = () => {
+    settingsChanged.value = true
+    selectedMiddleware.value!.handlerTsCode = monaco.editor.getModels().find(m => {
+        return m.uri.toString() === "ts:" + selectedMiddleware.value!.id + ".ts"
+    })!.getValue()
+
+    let idx = settings.value.middlewares.findIndex(m => m.id === selectedMiddleware.value?.id)
+
+    if (idx >= 0) {
+        settings.value.middlewares[idx] = { ...selectedMiddleware.value! }
+    } else {
+        settings.value.middlewares.push({ ...selectedMiddleware.value! })
+    }
+    cancelMiddleware()
+}
+
+const cancelMiddleware = () => {
+    selectedMiddleware.value = undefined
+}
+const addMiddleware = () => {
+    let id = "m_" + Math.random().toString().substring(2, 8)
+    selectedMiddleware.value = {
+        id,
+        name: "",
+        handlerTsCode: ""
+    }
+
+    if (!models[id]) {
+        models[id] = monaco.editor.createModel(EMPTY_MIDDLEWARE, "typescript", monaco.Uri.parse("ts:" + id + ".ts"))
+    }
+
+    loadModel(editorMiddleware, models[id], 'middleware-editor')
 }
 
 </script>
@@ -180,14 +290,36 @@ const removeCol = (colId: string) => {
                 <div>
                     <input class="input" v-model="settings.maxMessages" type="number" />
                 </div>
+                <div style="margin-top: 10px">
+                    <hr />
+                    <span><strong>Middlewares</strong> <button class="btn-sm" @click="addMiddleware">Add</button></span>
+                    <div v-for="m in settings.middlewares" style="margin:10px 0">
+                        {{ m.name }}
+                        <button @click="editMiddleware(m.id)" class="btn-sm">Edit</button>
+                        <button @click="removeMiddleware(m.id)" class="btn-sm">Remove</button>
+                    </div>
+                    <div v-if="selectedMiddleware">
+                        <div>Name</div>
+                        <div>
+                            <input class="input" v-model="selectedMiddleware.name" type="text" />
+                        </div>
+                    </div>
+                    <div style="margin:10px 0;" :style="{ 'display': !selectedMiddleware ? 'none' : 'block' }"
+                        id="middleware-editor"></div>
+                    <div v-if="selectedMiddleware">
+                        <button @click="saveMiddleware" class="btn-sm">Save middleware</button>
+                        <button @click="cancelMiddleware" class="btn-sm">Cancel</button>
+                    </div>
+
+                </div>
                 <div class="buttons">
-                    <button @click="saveSettings">Save settings</button>
+                    <button :disabled="!settingsChanged" @click="saveSettings">Save settings</button>
                     <button @click="cancelSettings">Cancel</button>
                 </div>
                 <hr />
             </div>
             <div v-if="!selectedColumn" style="margin: 10px 0;">
-                <button @click="add">Add new column</button>
+                <strong>Columns</strong> <button class="btn-sm" @click="add">Add</button>
             </div>
             <div class="column-edit">
                 <div v-if="!selectedColumn" v-for="col, k in layout.columns" :id="'container_' + col.name"
@@ -234,6 +366,10 @@ const removeCol = (colId: string) => {
 </template>
 
 <style scoped lang="scss">
+hr {
+    opacity: 0.1;
+}
+
 .drawer {
     position: fixed;
     right: 0;

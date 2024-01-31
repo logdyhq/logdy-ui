@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { Row, FacetValues, Facet, Message, CellHandler, Column, Settings } from "./types"
+import { Row, FacetValues, Facet, Message, CellHandler, Column, Settings, Middleware } from "./types"
 import { Layout } from "./config"
 import { Storage } from "./storage"
 import Drawer from "./components/Drawer.vue"
@@ -27,7 +27,7 @@ const columns = ref<Column[]>([])
 
 const storage = new Storage<Message>('logs')
 const storageLayout = new Storage<Layout>('layout')
-const layout = ref<Layout>(new Layout('main', { leftColWidth: 300, maxMessages: 1000 }))
+const layout = ref<Layout>(new Layout('main', { leftColWidth: 300, maxMessages: 1000, middlewares: [] }))
 
 const addToFacet = (f: Facet) => {
   if (!facets.value[f.name]) {
@@ -59,13 +59,27 @@ const removeFromFacet = (r: Row) => {
   })
 }
 
-const tryAddMessage = (m: Message) => {
+const processMiddlewares = (msg: Message, middlewares: Middleware[]): Message | void => {
+  for (let i in middlewares) {
+    let _msg = middlewares[i].handler!(msg)
+    if (_msg == null) {
+      return
+    }
+    msg = _msg
+  }
+
+  return msg
+}
+
+const tryAddMessage = (m: Message, settings: Settings) => {
   try {
-    addMessage(m)
+    let msg = processMiddlewares(m, settings.middlewares)
+    if (msg) {
+      addMessage(m)
+    }
   } catch (e) {
     // todo: messages that cannot be processed should land in DLQ or some kind of buffer
     console.error("Could not process message", e)
-
   }
 }
 
@@ -130,7 +144,7 @@ const clearAll = () => {
 
 const loadStorage = () => {
   storage.load().forEach(m => {
-    tryAddMessage(m)
+    tryAddMessage(m, layout.value.settings)
   })
 }
 
@@ -214,6 +228,7 @@ const columnRemoved = (colId: string) => {
 
 const settingsUpdate = (settings: Settings) => {
   layout.value.settings = settings
+  layout.value.processMiddlewareHandlers()
   storageLayout.removeAll()
   storageLayout.add(layout.value as Layout)
   render()
@@ -260,7 +275,7 @@ const connectToWs = () => {
         m = m as InitSettings
         break
       case "log":
-        tryAddMessage(m as Message)
+        tryAddMessage(m as Message, layout.value.settings)
         storage.add(m)
         break
       default:

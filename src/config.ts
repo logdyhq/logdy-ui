@@ -18,6 +18,7 @@ export class Layout {
         this.columns = obj.columns.map((c: Column) => {
             return this.prepareColumn(c)
         })
+        this.processMiddlewareHandlers()
     }
 
     removeColumn(id: string) {
@@ -29,6 +30,14 @@ export class Layout {
         col.handler = new Function(transpiled)() as any
 
         return col
+    }
+
+    processMiddlewareHandlers() {
+        this.settings.middlewares = this.settings.middlewares.map(m => {
+            let transpiled = ts.transpile(`return ` + m.handlerTsCode)
+            m.handler = new Function(transpiled)() as any
+            return m
+        })
     }
 
     private swapElement(indexA: number, indexB: number) {
