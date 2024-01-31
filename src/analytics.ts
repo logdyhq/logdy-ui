@@ -1,7 +1,5 @@
 
 const DEMO_TAG = "G-GV50H4VZGC"
-const PROD_TAG = ""
-
 
 let analyticsLoaded = false
 export default function loadAnalytics(demoMode: boolean) {
@@ -12,7 +10,7 @@ export default function loadAnalytics(demoMode: boolean) {
     }
 
     analyticsLoaded = true
-    console.log('Loading GA scripts')
+    console.log('Loading GA scripts', { demoMode })
 
     let script = document.createElement('script')
     script.setAttribute('src', 'https://www.googletagmanager.com/gtag/js?id=' + DEMO_TAG)
