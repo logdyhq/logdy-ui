@@ -6,7 +6,11 @@ export class Storage<T> {
 
     private keys: string[] = [];
 
-    constructor(private prefix: string) { }
+    constructor(private prefix: string) {
+        setInterval(() => {
+            this.clearUnknown()
+        }, 10 * 1000)
+    }
 
     clear() {
         this.lastInsertAt = ""
@@ -14,10 +18,22 @@ export class Storage<T> {
         this.keys = []
     }
 
+    clearUnknown() {
+        for (let i in localStorage) {
+            if (this.doesBelong(i) && !this.keys.includes(i)) {
+                localStorage.removeItem(i)
+            }
+        }
+    }
+
+    private doesBelong(key: string): boolean {
+        return key.startsWith(APP_PREFIX + '_' + this.prefix + '_')
+    }
+
     load(): T[] {
         this.clear()
         for (let i in localStorage) {
-            if (!i.startsWith(APP_PREFIX + '_' + this.prefix + '_')) {
+            if (!this.doesBelong(i)) {
                 continue
             }
 
