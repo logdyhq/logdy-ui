@@ -1,4 +1,4 @@
-const APP_PREFIX = 'logdy_'
+const APP_PREFIX = 'logdy'
 
 export class Storage<T> {
     private lastInsertAt: string = "";
@@ -7,9 +7,6 @@ export class Storage<T> {
     private keys: string[] = [];
 
     constructor(private prefix: string) {
-        setInterval(() => {
-            this.clearUnknown()
-        }, 10 * 1000)
     }
 
     clear() {
@@ -18,9 +15,16 @@ export class Storage<T> {
         this.keys = []
     }
 
+    startClearingUnknowns() {
+        setInterval(() => {
+            this.clearUnknown()
+        }, 10 * 1000)
+    }
+
     clearUnknown() {
         for (let i in localStorage) {
             if (this.doesBelong(i) && !this.keys.includes(i)) {
+                // console.debug('removing item', i)
                 localStorage.removeItem(i)
             }
         }
@@ -28,6 +32,10 @@ export class Storage<T> {
 
     private doesBelong(key: string): boolean {
         return key.startsWith(APP_PREFIX + '_' + this.prefix + '_')
+    }
+
+    private id(id: string): string {
+        return APP_PREFIX + '_' + this.prefix + '_' + id
     }
 
     load(): T[] {
@@ -46,23 +54,34 @@ export class Storage<T> {
         })
     }
 
-    add(item: T): { id: string } {
+    getOne(id: string): T | undefined {
+        let item = localStorage.getItem(this.id(id))
+        return item ? JSON.parse(item) : undefined
+    }
+
+    add(item: T, id?: string): { id: string } {
         let k = (new Date()).getTime().toString()
         if (k === this.lastInsertAt) {
             k = k + "." + (++this.sameInserts).toString()
         }
-        let id = APP_PREFIX + '_' + this.prefix + '_' + k
-        localStorage.setItem(id, JSON.stringify(item))
+        let _id = this.id(id || k)
+        localStorage.setItem(_id, JSON.stringify(item))
         this.lastInsertAt = k
 
-        this.keys.push(id)
+        this.keys.push(_id)
         return {
-            id
+            id: _id
         }
+    }
+
+    update(id: string, item: T) {
+        // console.debug("updating", this.id(id))
+        localStorage.setItem(this.id(id), JSON.stringify(item))
     }
 
     removeAll() {
         for (let i in this.keys) {
+            // console.debug("removing all", this.keys[i])
             localStorage.removeItem(this.keys[i])
         }
         this.keys = []
@@ -71,6 +90,7 @@ export class Storage<T> {
     removeFirst() {
         let id = this.keys[0]
         this.keys.splice(0, 1)
+        // console.debug("removing first", id)
         localStorage.removeItem(id)
     }
 }

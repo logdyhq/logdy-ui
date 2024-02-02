@@ -5,8 +5,10 @@ import * as monaco from 'monaco-editor';
 
 import jsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import { Column, Settings, Middleware } from "../types";
+import { Column, Settings, Middleware, Message } from "../types";
 import { momentdts } from "../moment.lib.ts";
+import { LIB_ES5_D_LIB } from "../lib_es5";
+import { LIB_ES2015_PROMISE_LIB } from "../lib_es2015.promise";
 
 self.MonacoEnvironment = {
     getWorker: function (_, label) {
@@ -72,7 +74,6 @@ type CellHandler = {
     facets?: Facet[]
 }
 
-
 type Facet = {
     /**
      * A facet name, will be used to group values under same label
@@ -83,7 +84,7 @@ type Facet = {
      */
     value: string
 }
-    `
+`
 
 let editor: monaco.editor.IStandaloneCodeEditor;
 let editorMiddleware: monaco.editor.IStandaloneCodeEditor;
@@ -96,6 +97,7 @@ let settings = ref<Settings>({ leftColWidth: 200, maxMessages: 1000, middlewares
 
 const props = defineProps<{
     layout: Layout,
+    sampleLine?: Message
 }>()
 
 const emit = defineEmits<{
@@ -107,19 +109,17 @@ const emit = defineEmits<{
 }>()
 
 const createEditor = (elId: string): monaco.editor.IStandaloneCodeEditor => {
-    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-        noSemanticValidation: true,
-        noSyntaxValidation: false,
-    });
-
-    // compiler options
-    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
         target: monaco.languages.typescript.ScriptTarget.ES2020,
-        allowNonTsExtensions: true,
+        noLib: true,
     });
     const libUri = 'ts:lib.d.ts'
 
     monaco.languages.typescript.typescriptDefaults.addExtraLib(LIBS, libUri)
+
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(LIB_ES5_D_LIB, "ts:filename/facts.d.ts");
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(LIB_ES2015_PROMISE_LIB, "ts:filename/es2015.promise.d.ts");
+
     monaco.languages.typescript.typescriptDefaults.addExtraLib(momentdts, 'ts:moment.d.ts')
     let uri = monaco.Uri.parse(libUri)
     if (!monaco.editor.getModel(uri)) {
@@ -208,7 +208,8 @@ const add = () => {
     selectedColumn.value = {
         id: "new",
         name: "",
-        handlerTsCode: ""
+        handlerTsCode: "",
+        faceted: false
     }
 
     if (!models['new']) {
@@ -216,6 +217,37 @@ const add = () => {
     }
 
     loadModel(editor, models['new'], 'editor')
+}
+
+const autoGenerate = () => {
+    console.log(props.sampleLine)
+    if (!props.sampleLine) {
+        return
+    }
+
+    for (let i in props.sampleLine.json_content) {
+        console.log(i, {
+            id: "new",
+            name: i.toString(),
+            handlerTsCode: `(line: Message): CellHandler => {
+    return { text: line.json_content[${i.toString()}] }
+}`
+        })
+        emit('edit', {
+            id: "new",
+            name: i.toString(),
+            handlerTsCode: `(line: Message): CellHandler => {
+    return { text: line.json_content[${i.toString()}] }
+}`
+        })
+    }
+}
+
+const toggleColumnFaceted = (colId: string) => {
+    selectedColumn.value = { ...props.layout.getColumn(colId) }
+    selectedColumn.value.faceted = !selectedColumn.value.faceted
+    emit('edit', selectedColumn.value)
+    selectedColumn.value = undefined
 }
 
 const removeCol = (colId: string) => {
@@ -320,6 +352,7 @@ const addMiddleware = () => {
             </div>
             <div v-if="!selectedColumn" style="margin: 10px 0;">
                 <strong>Columns</strong> <button class="btn-sm" @click="add">Add</button>
+                <button class="btn-sm" @click="autoGenerate">Auto-generate</button>
             </div>
             <div class="column-edit">
                 <div v-if="!selectedColumn" v-for="col, k in layout.columns" :id="'container_' + col.name"
@@ -327,6 +360,8 @@ const addMiddleware = () => {
                     <div class="name">{{ col.name }}</div>
                     <div class="controls">
                         <button @click="edit(col.id)" class="btn-sm">Edit</button>
+                        <button @click="toggleColumnFaceted(col.id)" :class="{ 'active': col.faceted }"
+                            class="btn-sm">Faceted</button>
                         <button @click="removeCol(col.id)" class="btn-sm">Remove</button>
                         <button :disabled="k === 0" @click="$emit('move', col.id, -1)" class="btn-sm">Move up</button>
                         <button :disabled="k === layout.columns.length - 1" @click="$emit('move', col.id, 1)"
@@ -449,5 +484,9 @@ hr {
     margin-right: 4px;
     border-radius: 4px;
     font-size: 12px;
+
+    &.active {
+        color: rgba(255, 255, 255, .3)
+    }
 }
 </style>../moment.lib.ts

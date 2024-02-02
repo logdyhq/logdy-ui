@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 
-
 export interface Notification {
     id?: string;
     timeout?: number;
@@ -27,6 +26,8 @@ export const useMainStore = defineStore("main", () => {
     const confirmShow = ref<boolean>(false);
 
     const status = ref<"connected" | "not connected">("not connected")
+    const anotherTab = ref<boolean>(false)
+    const modalShow = ref<boolean>(false)
 
     const initSettings = ref<InitSettings>()
 
@@ -47,6 +48,24 @@ export const useMainStore = defineStore("main", () => {
         confirmShow.value = false
     }
 
+    const channel = new BroadcastChannel('tab-activity');
+
+    setInterval(() => {
+        channel.postMessage("ping")
+    }, 5 * 1000)
+
+    channel.addEventListener('message', (event) => {
+        if (event.data === 'ping') {
+            channel.postMessage('pong')
+        }
+
+        if (!anotherTab.value) {
+            confirm("We have detected Logdy opened in another tab. Currently we do not support multiple tabs", () => {
+                anotherTab.value = false
+            })
+        }
+        anotherTab.value = true
+    });
 
     return {
         confirm,
@@ -58,6 +77,8 @@ export const useMainStore = defineStore("main", () => {
         demoStatus,
         status,
 
-        initSettings
+        initSettings,
+        anotherTab,
+        modalShow
     };
 });

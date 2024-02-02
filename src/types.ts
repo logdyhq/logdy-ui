@@ -61,10 +61,14 @@ export type Facet = {
     value: string
 }
 
+type RowHandlerFn = (line: Message) => Message | void
+
+type CellHandlerFn = (line: Message) => CellHandler
+
 export type Middleware = {
     id: string,
     name: string,
-    handler?: (line: Message) => Message | void,
+    handler?: RowHandlerFn,
     handlerTsCode?: string,
 }
 
@@ -82,8 +86,9 @@ export type Column = {
     idx?: number,
     width?: number
     hidden?: boolean
-    handler?: (line: Message) => CellHandler,
+    handler?: CellHandlerFn,
     handlerTsCode?: string,
+    faceted?: boolean
 }
 
 export type Row = {

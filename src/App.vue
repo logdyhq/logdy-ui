@@ -26,6 +26,8 @@ const settingsDrawer = ref<boolean>(false)
 const columns = ref<Column[]>([])
 
 const storage = new Storage<Message>('logs')
+storage.startClearingUnknowns()
+
 const storageLayout = new Storage<Layout>('layout')
 const layout = ref<Layout>(new Layout('main', { leftColWidth: 300, maxMessages: 1000, middlewares: [] }))
 
@@ -95,6 +97,13 @@ const addMessage = (m: Message) => {
   let cells = layout.value.columns.filter(c => !c.hidden).map((l): CellHandler => {
     try {
       let h = l.handler!(m)
+      if (l.faceted) {
+        h.facets = (h.facets || [])
+        h.facets.push({
+          name: l.name,
+          value: h.text
+        })
+      }
       h.facets?.forEach(addToFacet)
       return h
     } catch (e) {
@@ -105,6 +114,13 @@ const addMessage = (m: Message) => {
   let fields = layout.value.columns.filter(c => c.hidden).map((l): CellHandler => {
     try {
       let h = l.handler!(m)
+      if (l.faceted) {
+        h.facets = (h.facets || [])
+        h.facets.push({
+          name: l.name,
+          value: h.text
+        })
+      }
       h.facets?.forEach(addToFacet)
       return h
     } catch (e) {
@@ -117,7 +133,7 @@ const addMessage = (m: Message) => {
     msg: m,
     cells,
     fields,
-    facets: cells.map(c => c.facets || []).flat()
+    facets: cells.map(c => c.facets || []).flat().concat(fields.map(c => c.facets || []).flat())
   })
 
   let change = table.value && (table.value.scrollTop + table.value.offsetHeight + 20) >= table.value.scrollHeight
@@ -166,32 +182,29 @@ const loadConfig = (load?: Layout) => {
 }
 
 const displayRows = computed(() => {
-  const selectedFacets: string[] = []
-  const selectedFacets2: Record<string, string[]> = {}
+  const selectedFacets: Record<string, string[]> = {}
   for (let i in facets.value) {
     facets.value[i].items.forEach(el => {
       if (el.selected) {
-        selectedFacets.push(i + "_" + el.label)
-        if (!selectedFacets2[i]) {
-          selectedFacets2[i] = []
+        if (!selectedFacets[i]) {
+          selectedFacets[i] = []
         }
-        selectedFacets2[i].push(el.label)
+        selectedFacets[i].push(el.label)
       }
     })
   }
 
   return rows.value.filter(r => {
-    if (selectedFacets.length === 0) return true
-    let sel = { ...selectedFacets2 }
+    if (Object.keys(selectedFacets).length === 0) return true
+    let sel = { ...selectedFacets }
     let cnt = Object.keys(sel).length
 
     r.facets.forEach(f => {
-      console.log(sel, f)
       if (sel[f.name] && sel[f.name].includes(f.value)) {
         cnt--
       }
     })
-
+    console.log(r.facets)
     return cnt === 0
   }).filter(r => {
     if (searchbar.value.length < 3) {
@@ -211,12 +224,38 @@ const startDragging = () => {
   document.addEventListener('mousemove', handleDragging)
 }
 
+const startColumnDragging = (colId: string) => {
+  document.getElementById("app")?.classList.add('noselect')
+  const signal = new AbortController()
+  document.addEventListener('mousemove', (e: MouseEvent) => {
+    handleColumnDragging(colId, e)
+  }, { signal: signal.signal })
+
+  document.addEventListener('mouseup', () => {
+    signal.abort()
+
+    storageLayout.update('main', layout.value as Layout)
+  }, { once: true })
+}
+
 const endDragging = () => {
   document.getElementById("app")?.classList.remove('noselect')
   document.removeEventListener('mousemove', handleDragging)
 
-  storageLayout.removeAll()
-  storageLayout.add(layout.value as Layout)
+  storageLayout.update('main', layout.value as Layout)
+}
+
+const handleColumnDragging = (colId: string, e: MouseEvent) => {
+  let col = layout.value.getColumn(colId)
+  if (!col.width) {
+    col.width = 150
+  }
+  col.width += e.movementX
+  if (col.width <= 40) {
+    col.width = 40
+    return
+  }
+  layout.value.update(col)
 }
 
 const handleDragging = (e: MouseEvent) => {
@@ -229,23 +268,20 @@ const columnEdited = (col: Column) => {
   } else {
     layout.value.update(col)
   }
-  storageLayout.removeAll()
-  storageLayout.add(layout.value as Layout)
+  storageLayout.update('main', layout.value as Layout)
   render()
 }
 
 const columnRemoved = (colId: string) => {
   layout.value.removeColumn(colId)
-  storageLayout.removeAll()
-  storageLayout.add(layout.value as Layout)
+  storageLayout.update('main', layout.value as Layout)
   render()
 }
 
 const settingsUpdate = (settings: Settings) => {
   layout.value.settings = settings
   layout.value.processMiddlewareHandlers()
-  storageLayout.removeAll()
-  storageLayout.add(layout.value as Layout)
+  storageLayout.update('main', layout.value as Layout)
   render()
 }
 
@@ -257,6 +293,7 @@ const render = () => {
 }
 
 const connectToWs = () => {
+  console.log("Connecting to WS")
   const socket = new WebSocket('ws://' + window.location.host + '/ws');
   store.status = 'not connected'
   var wasOpened = false
@@ -275,6 +312,7 @@ const connectToWs = () => {
   }
 
   socket.onerror = (_: Event) => {
+    socket.close()
     setTimeout(() => {
       console.log("Reconnecting to WS")
       connectToWs()
@@ -399,7 +437,11 @@ const stickToBottom = () => {
         <div class="btn stick" @click="stickToBottom">Stick to bottom</div>
         <table class="table" cellspacing="0" cellpadding="0">
           <tr>
-            <th v-for="col in columns" :style="{ width: col.width + 'px' }">{{ col.name }}</th>
+            <th v-for="col in columns" :style="{ width: col.width + 'px' }">
+              {{ col.name }}
+              <div class="header-border" @mousedown="startColumnDragging(col.id)">
+                &nbsp;</div>
+            </th>
           </tr>
           <tr class="row" v-for="row in displayRows" @click="drawer.row = row">
             <td class="cell" v-for="_, k2 in columns">
@@ -409,7 +451,8 @@ const stickToBottom = () => {
         </table>
       </div>
       <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(layout as Layout)"
-        @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate" />
+        @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
+        :sampleLine="rows[0] && rows[0].msg" />
       <Drawer :row="drawer.row" :layout="(layout as Layout)" @close="drawer.row = undefined" />
     </div>
   </div>
@@ -523,6 +566,15 @@ const stickToBottom = () => {
       border: none;
       border-collapse: separate;
       border-spacing: 0;
+
+      .header-border {
+        height: 100%;
+        display: inline;
+        width: 3px;
+        cursor: ew-resize;
+        background: rgba(0, 0, 0, .25);
+        float: right;
+      }
 
       td,
       th {
