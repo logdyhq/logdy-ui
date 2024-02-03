@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { Layout } from "./config";
+import { Middleware } from "./types";
 
 export function generateData(json: boolean, separator: string = " | "): object | string {
     let data = {
@@ -16,8 +17,37 @@ export function generateData(json: boolean, separator: string = " | "): object |
     return json ? data : Object.values(data).join(separator)
 }
 
-export function getLayout(): Layout {
-    let l = new Layout("demo", { maxMessages: 1000, leftColWidth: 300 })
+export function getLayout(json: boolean = true): Layout {
+    let middlewares: Middleware[] = []
+
+    if (!json) {
+        middlewares.push({
+            id: "1",
+            name: "parse row",
+            handlerTsCode: `(line: Message): Message | void => {
+    line.is_json = true
+    line.json_content = Object.assign({}, line.content.split("|").map(l => l.trim()))
+    return line;
+}`
+        })
+    }
+
+    let l = new Layout("demo", { maxMessages: 1000, leftColWidth: 300, middlewares })
+
+    if (!json) {
+        l.add({
+            id: "1",
+            name: "raw",
+            handlerTsCode: `(line: Message): CellHandler => {
+                return { 
+                    text: line.content, 
+                }
+            }`,
+            width: 500
+        })
+        return l
+    }
+
     l.add({
         id: "",
         name: "ts",
@@ -27,7 +57,7 @@ export function getLayout(): Layout {
     })
 
     l.add({
-        id: "",
+        id: "1",
         name: "method",
         width: 100,
         handlerTsCode: `(line: Message): CellHandler => {
@@ -40,7 +70,7 @@ export function getLayout(): Layout {
         }`
     })
     l.add({
-        id: "",
+        id: "2",
         name: "level",
         width: 100,
         handlerTsCode: `(line: Message): CellHandler => {
@@ -53,7 +83,7 @@ export function getLayout(): Layout {
         }`
     })
     l.add({
-        id: "",
+        id: "3",
         name: "domain",
         width: 300,
         handlerTsCode: `(line: Message): CellHandler => {
@@ -61,7 +91,7 @@ export function getLayout(): Layout {
         }`
     })
     l.add({
-        id: "",
+        id: "4",
         name: "ipv4",
         width: 300,
         handlerTsCode: `(line: Message): CellHandler => {
@@ -69,7 +99,7 @@ export function getLayout(): Layout {
         }`
     })
     l.add({
-        id: "",
+        id: "5",
         name: "url",
         width: 300,
         handlerTsCode: `(line: Message): CellHandler => {
@@ -77,7 +107,7 @@ export function getLayout(): Layout {
         }`
     })
     l.add({
-        id: "",
+        id: "6",
         name: "issuer",
         width: 300,
         handlerTsCode: `(line: Message): CellHandler => {
@@ -91,7 +121,7 @@ export function getLayout(): Layout {
     })
 
     l.add({
-        id: "",
+        id: "7",
         name: "ua",
         hidden: true,
         handlerTsCode: `(line: Message): CellHandler => {

@@ -1,17 +1,22 @@
 <script setup lang="ts">
+import { useMainStore } from '../store';
+
 defineEmits<{
     (e: 'start'): void,
     (e: 'stop'): void,
     (e: 'add'): void,
+    (e: 'mode', mode: "json" | "string"): void,
 }>()
 </script>
 
 <template>
     <div class="demo-bar">
         <span>Demo mode</span>
-        <button @click="$emit('start')">Start</button>
-        <button @click="$emit('stop')">Stop</button>
+        <button @click="$emit('start')" :disabled="useMainStore().demoStatus === 'started'">Start</button>
+        <button @click="$emit('stop')" :disabled="useMainStore().demoStatus === 'stopped'">Stop</button>
         <button @click="$emit('add')">Add 100 messages</button>
+        <button @click="$emit('mode', 'json')" :disabled="useMainStore().demoContent === 'json'">Produce JSON</button>
+        <button @click="$emit('mode', 'string')" :disabled="useMainStore().demoContent === 'string'">Produce string</button>
     </div>
 </template>
 

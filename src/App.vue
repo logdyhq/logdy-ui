@@ -150,12 +150,14 @@ const removeMessage = () => {
   storage.removeFirst()
 }
 
+const clearAllRows = () => {
+  rows.value = []
+  facets.value = {}
+  storage.removeAll()
+}
+
 const clearAll = () => {
-  store.confirm("Are you sure you want to clear all logs?", () => {
-    rows.value = []
-    facets.value = {}
-    storage.removeAll()
-  })
+  store.confirm("Are you sure you want to clear all logs?", clearAllRows)
 }
 
 const loadStorage = () => {
@@ -342,7 +344,7 @@ const connectToWs = () => {
 const loadDemoMode = () => {
   store.status = 'connected'
   const numPerSec = 2
-  layout.value = demo.getLayout()
+  renderDemoMode()
 
   setInterval(() => {
     if (store.demoStatus === 'stopped') {
@@ -352,15 +354,23 @@ const loadDemoMode = () => {
   }, (1 / numPerSec) * 1000)
 }
 
+const renderDemoMode = () => {
+  layout.value = demo.getLayout(store.demoContent === 'json')
+  layout.value.processMiddlewareHandlers()
+  clearAllRows()
+  render()
+}
+
 const addDemoData = (count: number = 1) => {
+  let isJson = store.demoContent === 'json'
   while (count--) {
-    let data = demo.generateData(true)
-    addMessage({
-      content: JSON.stringify(data),
+    let data = demo.generateData(isJson)
+    tryAddMessage({
+      content: isJson ? JSON.stringify(data) : data as string,
       is_json: true,
       log_type: 0,
-      json_content: data
-    })
+      json_content: isJson ? data : null
+    }, layout.value.settings)
   }
 }
 
@@ -399,13 +409,18 @@ const stickToBottom = () => {
   table.value!.scrollTop = table.value!.scrollHeight + 30
 }
 
+const changeDemoMode = (mode: "json" | "string") => {
+  store.demoContent = mode
+  renderDemoMode()
+}
+
 </script>
 
 <template>
   <!-- <Modal @close="store.modalShow.value = false" v-if="store.modalShow.value" /> -->
   <Confirm />
   <DemoBar v-if="store.demoMode" @start="store.demoStatus = 'started'" @stop="store.demoStatus = 'stopped'"
-    @add="addDemoData(100)" />
+    @mode="changeDemoMode" @add="addDemoData(100)" />
   <div :class="{ 'demo': store.demoMode }">
     <div class="top-bar">
       <div class="left">

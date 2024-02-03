@@ -21,6 +21,7 @@ export const useMainStore = defineStore("main", () => {
         document.location.search.indexOf('demo') >= 0
     )
     const demoStatus = ref<"started" | "stopped">("started")
+    const demoContent = ref<"json" | "string">("json")
 
     const confirmMsg = ref<string>("");
     const confirmShow = ref<boolean>(false);
@@ -75,6 +76,7 @@ export const useMainStore = defineStore("main", () => {
 
         demoMode,
         demoStatus,
+        demoContent,
         status,
 
         initSettings,

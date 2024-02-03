@@ -9,6 +9,7 @@ import { Column, Settings, Middleware, Message } from "../types";
 import { momentdts } from "../moment.lib.ts";
 import { LIB_ES5_D_LIB } from "../lib_es5";
 import { LIB_ES2015_PROMISE_LIB } from "../lib_es2015.promise";
+import { LIB_ES5_CORE_LIB } from "../lib_es2015_core";
 
 self.MonacoEnvironment = {
     getWorker: function (_, label) {
@@ -110,7 +111,7 @@ const emit = defineEmits<{
 
 const createEditor = (elId: string): monaco.editor.IStandaloneCodeEditor => {
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-        target: monaco.languages.typescript.ScriptTarget.ES2020,
+        target: monaco.languages.typescript.ScriptTarget.ES2015,
         noLib: true,
     });
     const libUri = 'ts:lib.d.ts'
@@ -118,6 +119,7 @@ const createEditor = (elId: string): monaco.editor.IStandaloneCodeEditor => {
     monaco.languages.typescript.typescriptDefaults.addExtraLib(LIBS, libUri)
 
     monaco.languages.typescript.typescriptDefaults.addExtraLib(LIB_ES5_D_LIB, "ts:filename/facts.d.ts");
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(LIB_ES5_CORE_LIB, "ts:filename/es2015.core.d.ts");
     monaco.languages.typescript.typescriptDefaults.addExtraLib(LIB_ES2015_PROMISE_LIB, "ts:filename/es2015.promise.d.ts");
 
     monaco.languages.typescript.typescriptDefaults.addExtraLib(momentdts, 'ts:moment.d.ts')
@@ -225,22 +227,17 @@ const autoGenerate = () => {
         return
     }
 
-    for (let i in props.sampleLine.json_content) {
-        console.log(i, {
+    Object.keys(props.sampleLine.json_content).forEach(k => {
+        let col = {
             id: "new",
-            name: i.toString(),
+            name: "column " + k.toString(),
             handlerTsCode: `(line: Message): CellHandler => {
-    return { text: line.json_content[${i.toString()}] }
+    return { text: line.json_content['${k.toString()}'] }
 }`
-        })
-        emit('edit', {
-            id: "new",
-            name: i.toString(),
-            handlerTsCode: `(line: Message): CellHandler => {
-    return { text: line.json_content[${i.toString()}] }
-}`
-        })
-    }
+        }
+        emit('edit', col)
+        console.log('Column auto generated', k, col)
+    })
 }
 
 const toggleColumnFaceted = (colId: string) => {
