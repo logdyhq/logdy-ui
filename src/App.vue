@@ -416,7 +416,7 @@ const changeDemoMode = (mode: "json" | "string") => {
 }
 
 const sampleLine = computed(() => {
-  return rows.value && rows.value[sampleLineIndex.value].msg
+  return rows.value && rows.value[sampleLineIndex.value] && rows.value[sampleLineIndex.value].msg
 })
 
 const updateSampleLine = () => {

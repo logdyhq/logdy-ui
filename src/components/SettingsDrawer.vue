@@ -317,13 +317,13 @@ const addMiddleware = () => {
             </div>
 
             <div class="settings" v-if="settings && !selectedColumn">
+                <h2>Settings</h2>
                 <div>Maximum number of log messages stored</div>
                 <div>
                     <input class="input" v-model="settings.maxMessages" type="number" />
                 </div>
                 <div style="margin-top: 10px">
-                    <hr />
-                    <span><strong>Middlewares</strong> <button class="btn-sm" @click="addMiddleware">Add</button></span>
+                    <span>Middlewares <button class="btn-sm" @click="addMiddleware">Add</button></span>
                     <div v-for="m in settings.middlewares" style="margin:10px 0">
                         {{ m.name }}
                         <button @click="editMiddleware(m.id)" class="btn-sm">Edit</button>
@@ -344,14 +344,16 @@ const addMiddleware = () => {
 
                 </div>
                 <div class="buttons">
-                    <button :disabled="!settingsChanged" @click="saveSettings">Save settings</button>
-                    <button @click="cancelSettings">Cancel</button>
+                    <button :disabled="!settingsChanged" class="btn-sm" @click="saveSettings">Save settings</button>
+                    <button @click="cancelSettings" class="btn-sm">Cancel</button>
                 </div>
                 <hr />
             </div>
             <div v-if="!selectedColumn" style="margin: 10px 0;">
-                <strong>Columns</strong> <button class="btn-sm" @click="add">Add</button>
-                <button class="btn-sm" @click="autoGenerate">Auto-generate</button>
+                <h2>Columns
+                    <button class="btn-sm" @click="add">Add</button>
+                    <button class="btn-sm" @click="autoGenerate">Auto-generate</button>
+                </h2>
             </div>
             <div class="column-edit">
                 <div v-if="!selectedColumn" v-for="col, k in layout.columns" :id="'container_' + col.name"
@@ -397,15 +399,24 @@ const addMiddleware = () => {
             </div>
             <div class="sample-line">
                 <hr />
-                <button class="btn-sm" @click="sampleLineVisible = !sampleLineVisible">Toggle sample line</button>
-                <button class="btn-sm" v-if="sampleLineVisible" @click="$emit('update-sample-line')">Change line</button>
+                <h2>Sample line preview
+                    <button class="btn-sm" @click="sampleLineVisible = !sampleLineVisible">Toggle sample line</button>
+                    <button class="btn-sm" v-if="sampleLineVisible" @click="$emit('update-sample-line')">Change
+                        line</button>
+
+                </h2>
                 <div v-if="sampleLineVisible">
-                    <h4>Field: content</h4>
-                    <pre>{{ sampleLine?.content }}</pre>
-                    <h4>Field: is_json</h4>
-                    <pre>{{ sampleLine?.is_json }}</pre>
-                    <h4>Field: json_content</h4>
-                    <pre v-highlightjs><code class="json">{{ sampleLine?.json_content }}</code></pre>
+                    <div v-if="sampleLine">
+                        <h4>Field: content</h4>
+                        <pre>{{ sampleLine?.content }}</pre>
+                        <h4>Field: is_json</h4>
+                        <pre>{{ sampleLine?.is_json }}</pre>
+                        <h4>Field: json_content</h4>
+                        <pre v-highlightjs><code class="json">{{ sampleLine?.json_content }}</code></pre>
+                    </div>
+                    <div v-else>
+                        <pre>No sample line provided</pre>
+                    </div>
                 </div>
             </div>
         </div>
