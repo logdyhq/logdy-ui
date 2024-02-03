@@ -93,6 +93,7 @@ let models: Record<string, monaco.editor.ITextModel> = {};
 const settingsChanged = ref<boolean>(false)
 
 let selectedColumn = ref<Column>()
+let sampleLineVisible = ref<boolean>(true)
 let selectedMiddleware = ref<Middleware>()
 let settings = ref<Settings>({ leftColWidth: 200, maxMessages: 1000, middlewares: [] })
 
@@ -107,6 +108,7 @@ const emit = defineEmits<{
     (e: 'settings-update', settings: Settings): void
     (e: 'remove', columnId: string): void
     (e: 'move', columnId: string, diff: number): void
+    (e: 'update-sample-line'): void
 }>()
 
 const createEditor = (elId: string): monaco.editor.IStandaloneCodeEditor => {
@@ -391,6 +393,19 @@ const addMiddleware = () => {
                 <div style="margin-top:10px" v-if="selectedColumn">
                     <button @click="save()">Save</button>
                     <button @click="selectedColumn = undefined">Cancel</button>
+                </div>
+            </div>
+            <div class="sample-line">
+                <hr />
+                <button class="btn-sm" @click="sampleLineVisible = !sampleLineVisible">Toggle sample line</button>
+                <button class="btn-sm" v-if="sampleLineVisible" @click="$emit('update-sample-line')">Change line</button>
+                <div v-if="sampleLineVisible">
+                    <h4>Field: content</h4>
+                    <pre>{{ sampleLine?.content }}</pre>
+                    <h4>Field: is_json</h4>
+                    <pre>{{ sampleLine?.is_json }}</pre>
+                    <h4>Field: json_content</h4>
+                    <pre v-highlightjs><code class="json">{{ sampleLine?.json_content }}</code></pre>
                 </div>
             </div>
         </div>

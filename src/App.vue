@@ -24,6 +24,7 @@ const drawer = ref<{
 const searchbar = ref<string>("")
 const settingsDrawer = ref<boolean>(false)
 const columns = ref<Column[]>([])
+const sampleLineIndex = ref<number>(0)
 
 const storage = new Storage<Message>('logs')
 storage.startClearingUnknowns()
@@ -414,6 +415,14 @@ const changeDemoMode = (mode: "json" | "string") => {
   renderDemoMode()
 }
 
+const sampleLine = computed(() => {
+  return rows.value && rows.value[sampleLineIndex.value].msg
+})
+
+const updateSampleLine = () => {
+  sampleLineIndex.value = Math.floor(Math.random() * rows.value.length)
+}
+
 </script>
 
 <template>
@@ -467,7 +476,7 @@ const changeDemoMode = (mode: "json" | "string") => {
       </div>
       <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(layout as Layout)"
         @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
-        :sampleLine="rows[0] && rows[0].msg" />
+        @update-sample-line="updateSampleLine" :sampleLine="sampleLine" />
       <Drawer :row="drawer.row" :layout="(layout as Layout)" @close="drawer.row = undefined" />
     </div>
   </div>
