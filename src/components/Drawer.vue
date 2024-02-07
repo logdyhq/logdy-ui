@@ -45,6 +45,10 @@ defineEmits<{
                     <h3>Raw message</h3>
                     <pre><code>{{ row.msg.content }}</code></pre>
                 </div>
+                <div v-if="row.msg.origin?.port" class="raw">
+                    <h3>Origin port</h3>
+                    <pre><code>{{ row.msg.origin?.port }}</code></pre>
+                </div>
             </div>
         </div>
     </div>

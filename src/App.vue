@@ -222,6 +222,17 @@ const loadColumnsFromLayout = () => {
   columns.value = layout.value.columns.filter(col => !col.hidden)
 }
 
+const addRawColumn = () => {
+  columnEdited({
+    name: "raw",
+    id: "new",
+    width: 500,
+    handlerTsCode: `(line: Message): CellHandler => {
+    return { text: line.content || "-"}
+}`
+  })
+}
+
 const startDragging = () => {
   document.getElementById("app")?.classList.add('noselect')
   document.addEventListener('mousemove', handleDragging)
@@ -458,21 +469,28 @@ const updateSampleLine = () => {
       </div>
       <div class="mid-col" @mousedown="startDragging"></div>
       <div class="right-col" ref="table">
-        <div class="btn stick" @click="stickToBottom">Stick to bottom</div>
-        <table class="table" cellspacing="0" cellpadding="0">
-          <tr>
-            <th v-for="col in columns" :style="{ width: col.width + 'px' }">
-              {{ col.name }}
-              <div class="header-border" @mousedown="startColumnDragging(col.id)">
-                &nbsp;</div>
-            </th>
-          </tr>
-          <tr class="row" v-for="row in displayRows" @click="drawer.row = row">
-            <td class="cell" v-for="_, k2 in columns">
-              <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
-            </td>
-          </tr>
-        </table>
+        <div v-if="columns.length === 0" style="text-align: center; padding-top:100px; font-size: 20px;">
+          No columns defined, open <span class="clickable" @click="settingsDrawer = true">Settings</span> and add
+          columns<br />
+          or <span class="clickable" @click="addRawColumn">add column with raw content now</span>.
+        </div>
+        <template v-else>
+          <div class="btn stick" @click="stickToBottom">Stick to bottom</div>
+          <table class="table" cellspacing="0" cellpadding="0">
+            <tr>
+              <th v-for="col in columns" :style="{ width: col.width + 'px' }">
+                {{ col.name }}
+                <div class="header-border" @mousedown="startColumnDragging(col.id)">
+                  &nbsp;</div>
+              </th>
+            </tr>
+            <tr class="row" v-for="row in displayRows" @click="drawer.row = row">
+              <td class="cell" v-for="_, k2 in columns">
+                <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
+              </td>
+            </tr>
+          </table>
+        </template>
       </div>
       <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(layout as Layout)"
         @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
@@ -576,6 +594,16 @@ const updateSampleLine = () => {
     width: 100%;
     height: calc(100%);
 
+
+    .clickable {
+      text-decoration: underline;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .clickable:hover {
+      text-decoration: none;
+    }
 
     .stick {
       position: fixed;
