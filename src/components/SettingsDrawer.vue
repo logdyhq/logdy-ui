@@ -50,7 +50,16 @@ type Message = {
     /**
      * Specifies whether the 'content' field is in json format
      */
-    is_json: boolean
+    is_json: boolean,
+    /**
+     * Specifies the origin of the message
+     */
+    origin?: {
+        /**
+         * Origin port number if the message was produced 
+         */
+        port: string
+    }
 }
 
 type CellHandler = {
