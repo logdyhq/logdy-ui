@@ -14,7 +14,7 @@ const toggleAll = (f: FacetCollection) => {
 }
 const facetsSorted = computed(() => {
     return Object.values(props.facets).map(v => {
-        v.items.sort((a, b) => {
+        [...v.items].sort((a, b) => {
             return a.count > b.count ? -1 : 1
         })
         return v
