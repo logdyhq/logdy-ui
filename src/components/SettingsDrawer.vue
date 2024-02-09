@@ -54,11 +54,15 @@ type Message = {
     /**
      * Specifies the origin of the message
      */
-    origin?: {
+     origin?: {
         /**
-         * Origin port number if the message was produced 
+         * Origin port number
          */
         port: string
+        /**
+         * Origin file name with path
+         */
+        file: string
     }
 }
 

@@ -375,13 +375,28 @@ const renderDemoMode = () => {
 
 const addDemoData = (count: number = 1) => {
   let isJson = store.demoContent === 'json'
+
+  let rand = Math.random()
+  let origin = {
+    port: "",
+    file: ""
+  }
+  if (rand < 0.50) {
+    origin.port = "8123"
+    origin.file = "foo.log"
+  } else {
+    origin.port = "8999"
+    origin.file = "foo/bar.log"
+  }
+
   while (count--) {
     let data = demo.generateData(isJson)
     tryAddMessage({
       content: isJson ? JSON.stringify(data) : data as string,
       is_json: true,
       log_type: 0,
-      json_content: isJson ? data : null
+      json_content: isJson ? data : null,
+      origin
     }, layout.value.settings)
   }
 }

@@ -49,6 +49,10 @@ defineEmits<{
                     <h3>Origin port</h3>
                     <pre><code>{{ row.msg.origin?.port }}</code></pre>
                 </div>
+                <div v-if="row.msg.origin?.file" class="raw">
+                    <h3>Origin filename</h3>
+                    <pre><code>{{ row.msg.origin?.file }}</code></pre>
+                </div>
             </div>
         </div>
     </div>
