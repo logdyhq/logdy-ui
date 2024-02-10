@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { StyleValue, computed, onMounted, ref, watch } from 'vue';
 import { Row, FacetValues, Facet, Message, CellHandler, Column, Settings, Middleware } from "./types"
 import { Layout } from "./config"
 import { Storage } from "./storage"
@@ -499,8 +499,9 @@ const updateSampleLine = () => {
                   &nbsp;</div>
               </th>
             </tr>
-            <tr class="row" v-for="row in displayRows" @click="drawer.row = row">
-              <td class="cell" v-for="_, k2 in columns">
+            <tr class="row" v-for="row in displayRows" @click="drawer.row = row"
+              :style="(row.msg.style as StyleValue || {})">
+              <td class="cell" v-for="_, k2 in columns" :style="row.cells[k2].style as StyleValue || {}">
                 <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
               </td>
             </tr>

@@ -37,7 +37,13 @@ export type Message = {
          * Origin file name with path
          */
         file: string
-    }
+    },
+    /** 
+     * Special styles that will be applied to entire row
+     * of the table. For example { "background": "red" }, will make the whole row
+     * background red.
+     */
+    style?: object,
 }
 
 export type CellHandler = {
