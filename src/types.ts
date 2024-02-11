@@ -26,6 +26,10 @@ export type Message = {
      */
     is_json: boolean,
     /**
+     * A UNIX timestamp in milliseconds for when the message was received by Logdy
+     */
+    ts: number,
+    /**
      * Specifies the origin of the message
      */
     origin?: {
