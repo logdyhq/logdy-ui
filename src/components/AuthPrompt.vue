@@ -6,6 +6,7 @@ const pass = ref<string>("")
 const input = ref<HTMLInputElement>()
 const loading = ref<boolean>()
 const msg = ref<string>()
+const remember = ref<boolean>(true)
 
 const emit = defineEmits<{
     (e: 'success'): void,
@@ -22,7 +23,7 @@ const submit = async () => {
 
     loading.value = false
     if (res.status == 200) {
-        useMainStore().setPassword(pass.value.toString())
+        useMainStore().setPassword(pass.value.toString(), remember.value)
         emit('success')
         return
     }
@@ -39,6 +40,9 @@ const submit = async () => {
         <input class="input" ref="input" v-model="pass" type="text" style="min-width: 400px;" @keyup.enter="submit" />
     </div>
     <div v-if="loading">loading...</div>
+    <div style="margin-top: 10px">
+        <input type="checkbox" v-model="remember" id="ch" /> <label for="ch">Remember password</label>
+    </div>
     <div class="err" v-if="msg">
         {{ msg }}
     </div>

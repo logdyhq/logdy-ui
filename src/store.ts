@@ -36,9 +36,11 @@ export const useMainStore = defineStore("main", () => {
 
     let confirmFn: (() => void) | null = null;
 
-    const setPassword = (pass: string) => {
+    const setPassword = (pass: string, store: boolean = true) => {
         password.value = pass
-        storageApp.add({ password: pass }, "main")
+        if (store) {
+            storageApp.add({ password: pass }, "main")
+        }
     }
 
     const getPassword = (): string => {
