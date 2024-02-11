@@ -25,6 +25,7 @@ const drawer = ref<{
 }>({})
 const searchbar = ref<string>("")
 const settingsDrawer = ref<boolean>(false)
+const stickedToBottom = ref<boolean>(false)
 const columns = ref<Column[]>([])
 const sampleLineIndex = ref<number>(0)
 
@@ -139,12 +140,15 @@ const addMessage = (m: Message) => {
     facets: cells.map(c => c.facets || []).flat().concat(fields.map(c => c.facets || []).flat())
   })
 
-  let change = table.value && (table.value.scrollTop + table.value.offsetHeight + 20) >= table.value.scrollHeight
   setTimeout(() => {
-    if (change) {
+    if (shouldStickToBottom()) {
       stickToBottom()
     }
   }, 10)
+}
+
+const shouldStickToBottom = () => {
+  return table.value && (table.value.scrollTop + table.value.offsetHeight + 20) >= table.value.scrollHeight
 }
 
 const removeMessage = () => {
@@ -209,7 +213,6 @@ const displayRows = computed(() => {
         cnt--
       }
     })
-    console.log(r.facets)
     return cnt === 0
   }).filter(r => {
     if (searchbar.value.length < 3) {
@@ -394,7 +397,8 @@ const addDemoData = (count: number = 1) => {
       is_json: true,
       log_type: 0,
       json_content: isJson ? data : null,
-      origin
+      origin,
+      ts: new Date().getTime(),
     }, layout.value.settings)
   }
 }
@@ -420,6 +424,14 @@ onMounted(async () => {
       drawer.value.row = undefined
     }
   });
+
+  table.value?.addEventListener("scroll", () => {
+    if (!shouldStickToBottom()) {
+      stickedToBottom.value = false
+    } else {
+      stickedToBottom.value = true
+    }
+  })
 
 })
 
@@ -512,7 +524,10 @@ const updateSampleLine = () => {
           or <span class="clickable" @click="addRawColumn">add column with raw content now</span>.
         </div>
         <template v-else>
-          <div class="btn stick" @click="stickToBottom">Stick to bottom</div>
+          <div class="btn stick" @click="stickToBottom" :class="{ sticked: stickedToBottom }">
+            <template v-if="!stickedToBottom">Stick to bottom</template>
+            <template v-else>Sticked</template>
+          </div>
           <table class="table" cellspacing="0" cellpadding="0">
             <tr>
               <th v-for="col in columns" :style="{ width: col.width + 'px' }">
@@ -647,7 +662,11 @@ const updateSampleLine = () => {
       position: fixed;
       right: 15px;
       bottom: 10px;
-      font-size: 12px;
+      font-size: 11px;
+
+      &.sticked {
+        border: 1px solid #646cff;
+      }
     }
 
     .table {
