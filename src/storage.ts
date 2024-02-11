@@ -94,3 +94,7 @@ export class Storage<T> {
         localStorage.removeItem(id)
     }
 }
+
+export const storageApp = new Storage<{
+    password?: string
+}>('app')

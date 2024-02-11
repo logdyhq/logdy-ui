@@ -6,6 +6,8 @@ import { Storage } from "./storage"
 import Drawer from "./components/Drawer.vue"
 import SettingsDrawer from "./components/SettingsDrawer.vue"
 import FacetComponent from "./components/Facet.vue"
+import Modal from "./components/Modal.vue"
+import AuthPrompt from "./components/AuthPrompt.vue"
 import StatusIndicator from "./components/StatusIndicator.vue"
 import DemoBar from "./components/DemoBar.vue"
 import Confirm from "./components/ConfirmModal.vue"
@@ -308,7 +310,7 @@ const render = () => {
 
 const connectToWs = () => {
   console.log("Connecting to WS")
-  const socket = new WebSocket('ws://' + window.location.host + '/ws');
+  const socket = new WebSocket('ws://' + window.location.host + '/ws?password=' + store.getPassword());
   store.status = 'not connected'
   var wasOpened = false
 
@@ -337,10 +339,6 @@ const connectToWs = () => {
     let m = JSON.parse(msg.data)
 
     switch (m.message_type) {
-      case "init":
-        console.debug('Received init message', m)
-        m = m as InitSettings
-        break
       case "log":
         tryAddMessage(m as Message, layout.value.settings)
         storage.add(m)
@@ -412,9 +410,7 @@ onMounted(async () => {
     loadDemoMode()
     loadAnalytics(true)
   } else {
-    connectToWs()
-    loadAnalytics(false)
-    loadConfig()
+    await initWs()
   }
 
   render()
@@ -426,6 +422,30 @@ onMounted(async () => {
   });
 
 })
+
+const postAuth = () => {
+  store.modalShow = ""
+  connectToWs()
+  loadAnalytics(false)
+  loadConfig()
+}
+
+const initWs = async () => {
+  let res = await fetch("/api/status")
+
+  let init = await res.json() as InitSettings
+
+  store.initSettings = init
+
+  console.log(init)
+
+  let passValid = await fetch("/api/check-pass?password=" + store.getPassword())
+  if (store.initSettings.authRequired && passValid.status !== 200) {
+    store.modalShow = "auth"
+  } else {
+    postAuth()
+  }
+}
 
 const reorderColumns = (colId: string, diff: number) => {
   layout.value.move(colId, diff)
@@ -452,7 +472,9 @@ const updateSampleLine = () => {
 </script>
 
 <template>
-  <!-- <Modal @close="store.modalShow.value = false" v-if="store.modalShow.value" /> -->
+  <Modal @close="store.modalShow = ''" v-if="store.modalShow">
+    <AuthPrompt v-if="store.modalShow == 'auth'" @success="postAuth" />
+  </Modal>
   <Confirm />
   <DemoBar v-if="store.demoMode" @start="store.demoStatus = 'started'" @stop="store.demoStatus = 'stopped'"
     @mode="changeDemoMode" @add="addDemoData(100)" />

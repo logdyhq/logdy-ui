@@ -19,6 +19,9 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     proxy: {
+      '/api': {
+        target: "http://localhost:8080"
+      },
       '/ws': {
         target: 'ws://localhost:8080',
         ws: true,
