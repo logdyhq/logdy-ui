@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { storageApp } from "./storage";
 
 export interface Notification {
     id?: string;
@@ -11,11 +12,11 @@ export interface Notification {
 export interface InitSettings {
     received: boolean;
     analyticsEnabled: boolean;
+    authRequired: boolean;
 }
 
 export const useMainStore = defineStore("main", () => {
 
-    // const modalShow = ref<boolean>(false)
     const demoMode = ref<boolean>(
         document.location.host.indexOf('demo') >= 0 ||
         document.location.search.indexOf('demo') >= 0
@@ -28,11 +29,26 @@ export const useMainStore = defineStore("main", () => {
 
     const status = ref<"connected" | "not connected">("not connected")
     const anotherTab = ref<boolean>(false)
-    const modalShow = ref<boolean>(false)
+    const modalShow = ref<"" | "auth">("")
+    const password = ref<string>("")
 
     const initSettings = ref<InitSettings>()
 
     let confirmFn: (() => void) | null = null;
+
+    const setPassword = (pass: string, store: boolean = true) => {
+        password.value = pass
+        if (store) {
+            storageApp.add({ password: pass }, "main")
+        }
+    }
+
+    const getPassword = (): string => {
+        if (!password.value) {
+            password.value = storageApp.getOne("main")?.password || ""
+        }
+        return password.value
+    }
 
     const confirm = (msg: string, fn: () => void) => {
         confirmMsg.value = msg
@@ -81,6 +97,9 @@ export const useMainStore = defineStore("main", () => {
 
         initSettings,
         anotherTab,
-        modalShow
+        modalShow,
+
+        setPassword,
+        getPassword
     };
 });

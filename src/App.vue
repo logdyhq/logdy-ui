@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { StyleValue, computed, onMounted, ref, watch } from 'vue';
 import { Row, FacetValues, Facet, Message, CellHandler, Column, Settings, Middleware } from "./types"
 import { Layout } from "./config"
 import { Storage } from "./storage"
 import Drawer from "./components/Drawer.vue"
 import SettingsDrawer from "./components/SettingsDrawer.vue"
 import FacetComponent from "./components/Facet.vue"
+import Modal from "./components/Modal.vue"
+import AuthPrompt from "./components/AuthPrompt.vue"
 import StatusIndicator from "./components/StatusIndicator.vue"
 import DemoBar from "./components/DemoBar.vue"
 import Confirm from "./components/ConfirmModal.vue"
@@ -23,6 +25,7 @@ const drawer = ref<{
 }>({})
 const searchbar = ref<string>("")
 const settingsDrawer = ref<boolean>(false)
+const stickedToBottom = ref<boolean>(false)
 const columns = ref<Column[]>([])
 const sampleLineIndex = ref<number>(0)
 
@@ -137,12 +140,15 @@ const addMessage = (m: Message) => {
     facets: cells.map(c => c.facets || []).flat().concat(fields.map(c => c.facets || []).flat())
   })
 
-  let change = table.value && (table.value.scrollTop + table.value.offsetHeight + 20) >= table.value.scrollHeight
   setTimeout(() => {
-    if (change) {
+    if (shouldStickToBottom()) {
       stickToBottom()
     }
   }, 10)
+}
+
+const shouldStickToBottom = () => {
+  return table.value && (table.value.scrollTop + table.value.offsetHeight + 20) >= table.value.scrollHeight
 }
 
 const removeMessage = () => {
@@ -207,7 +213,6 @@ const displayRows = computed(() => {
         cnt--
       }
     })
-    console.log(r.facets)
     return cnt === 0
   }).filter(r => {
     if (searchbar.value.length < 3) {
@@ -308,7 +313,7 @@ const render = () => {
 
 const connectToWs = () => {
   console.log("Connecting to WS")
-  const socket = new WebSocket('ws://' + window.location.host + '/ws');
+  const socket = new WebSocket('ws://' + window.location.host + '/ws?password=' + store.getPassword());
   store.status = 'not connected'
   var wasOpened = false
 
@@ -337,10 +342,6 @@ const connectToWs = () => {
     let m = JSON.parse(msg.data)
 
     switch (m.message_type) {
-      case "init":
-        console.debug('Received init message', m)
-        m = m as InitSettings
-        break
       case "log":
         tryAddMessage(m as Message, layout.value.settings)
         storage.add(m)
@@ -396,7 +397,8 @@ const addDemoData = (count: number = 1) => {
       is_json: true,
       log_type: 0,
       json_content: isJson ? data : null,
-      origin
+      origin,
+      ts: new Date().getTime(),
     }, layout.value.settings)
   }
 }
@@ -412,9 +414,7 @@ onMounted(async () => {
     loadDemoMode()
     loadAnalytics(true)
   } else {
-    connectToWs()
-    loadAnalytics(false)
-    loadConfig()
+    await initWs()
   }
 
   render()
@@ -425,7 +425,39 @@ onMounted(async () => {
     }
   });
 
+  table.value?.addEventListener("scroll", () => {
+    if (!shouldStickToBottom()) {
+      stickedToBottom.value = false
+    } else {
+      stickedToBottom.value = true
+    }
+  })
+
 })
+
+const postAuth = () => {
+  store.modalShow = ""
+  connectToWs()
+  loadAnalytics(false)
+  loadConfig()
+}
+
+const initWs = async () => {
+  let res = await fetch("/api/status")
+
+  let init = await res.json() as InitSettings
+
+  store.initSettings = init
+
+  console.log(init)
+
+  let passValid = await fetch("/api/check-pass?password=" + store.getPassword())
+  if (store.initSettings.authRequired && passValid.status !== 200) {
+    store.modalShow = "auth"
+  } else {
+    postAuth()
+  }
+}
 
 const reorderColumns = (colId: string, diff: number) => {
   layout.value.move(colId, diff)
@@ -452,7 +484,9 @@ const updateSampleLine = () => {
 </script>
 
 <template>
-  <!-- <Modal @close="store.modalShow.value = false" v-if="store.modalShow.value" /> -->
+  <Modal @close="store.modalShow = ''" v-if="store.modalShow">
+    <AuthPrompt v-if="store.modalShow == 'auth'" @success="postAuth" />
+  </Modal>
   <Confirm />
   <DemoBar v-if="store.demoMode" @start="store.demoStatus = 'started'" @stop="store.demoStatus = 'stopped'"
     @mode="changeDemoMode" @add="addDemoData(100)" />
@@ -490,7 +524,10 @@ const updateSampleLine = () => {
           or <span class="clickable" @click="addRawColumn">add column with raw content now</span>.
         </div>
         <template v-else>
-          <div class="btn stick" @click="stickToBottom">Stick to bottom</div>
+          <div class="btn stick" @click="stickToBottom" :class="{ sticked: stickedToBottom }">
+            <template v-if="!stickedToBottom">Stick to bottom</template>
+            <template v-else>Sticked</template>
+          </div>
           <table class="table" cellspacing="0" cellpadding="0">
             <tr>
               <th v-for="col in columns" :style="{ width: col.width + 'px' }">
@@ -499,8 +536,9 @@ const updateSampleLine = () => {
                   &nbsp;</div>
               </th>
             </tr>
-            <tr class="row" v-for="row in displayRows" @click="drawer.row = row">
-              <td class="cell" v-for="_, k2 in columns">
+            <tr class="row" v-for="row in displayRows" @click="drawer.row = row"
+              :style="(row.msg.style as StyleValue || {})">
+              <td class="cell" v-for="_, k2 in columns" :style="row.cells[k2].style as StyleValue || {}">
                 <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
               </td>
             </tr>
@@ -624,7 +662,11 @@ const updateSampleLine = () => {
       position: fixed;
       right: 15px;
       bottom: 10px;
-      font-size: 12px;
+      font-size: 11px;
+
+      &.sticked {
+        border: 1px solid #646cff;
+      }
     }
 
     .table {

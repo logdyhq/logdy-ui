@@ -18,7 +18,11 @@ export default defineConfig({
   plugins: [vue(), monacoEditorPlugin({ languageWorkers: ['typescript'] })],
   server: {
     host: "0.0.0.0",
+    port: 1001,
     proxy: {
+      '/api': {
+        target: "http://localhost:8080"
+      },
       '/ws': {
         target: 'ws://localhost:8080',
         ws: true,

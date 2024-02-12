@@ -52,6 +52,10 @@ type Message = {
      */
     is_json: boolean,
     /**
+     * A UNIX timestamp in milliseconds for when the message was received by Logdy
+     */
+    ts: number,
+    /**
      * Specifies the origin of the message
      */
      origin?: {
@@ -63,7 +67,13 @@ type Message = {
          * Origin file name with path
          */
         file: string
-    }
+    },
+    /** 
+     * Special styles that will be applied to entire row
+     * of the table. For example { "background": "red" }, will make the whole row
+     * background red.
+     */
+    style?: object,
 }
 
 type CellHandler = {
