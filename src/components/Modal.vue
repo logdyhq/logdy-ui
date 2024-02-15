@@ -23,7 +23,7 @@ defineEmits<{
     height: 100%;
     background: black;
     opacity: 0.5;
-    z-index: 999;
+    z-index: 9999;
 }
 
 .modal {
@@ -37,7 +37,7 @@ defineEmits<{
     width: 900px;
     max-height: 800px;
     background: var(--hl-bg);
-    z-index: 1000;
+    z-index: 10000;
     padding: 20px;
 
     .close {

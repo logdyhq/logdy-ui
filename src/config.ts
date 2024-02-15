@@ -21,6 +21,12 @@ export class Layout {
         this.processMiddlewareHandlers()
     }
 
+    toObj(): object {
+        return {
+            name: this.name, columns: this.columns, settings: this.settings
+        }
+    }
+
     removeColumn(id: string) {
         this.columns.splice(this.columns.findIndex(c => c.id === id), 1)
     }

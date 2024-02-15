@@ -10,6 +10,7 @@ import { momentdts } from "../moment.lib.ts";
 import { LIB_ES5_D_LIB } from "../lib_es5";
 import { LIB_ES2015_PROMISE_LIB } from "../lib_es2015.promise";
 import { LIB_ES5_CORE_LIB } from "../lib_es2015_core";
+import { useMainStore } from "../store";
 
 self.MonacoEnvironment = {
     getWorker: function (_, label) {
@@ -340,7 +341,9 @@ const addMiddleware = () => {
             </div>
 
             <div class="settings" v-if="settings && !selectedColumn">
-                <h2>Settings</h2>
+                <h2>Settings
+                    <button class="btn-sm" @click="useMainStore().modalShow = 'import'">Export / import</button>
+                </h2>
                 <div>Maximum number of log messages stored</div>
                 <div>
                     <input class="input" v-model="settings.maxMessages" type="number" />
@@ -458,7 +461,7 @@ hr {
     width: 900px;
     height: calc(100vh - 22px);
     background: var(--hl-bg);
-    z-index: 999999;
+    z-index: 999;
     opacity: 0.97;
     padding: 10px;
 

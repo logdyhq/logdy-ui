@@ -66,7 +66,7 @@ defineEmits<{
     width: 900px;
     height: calc(100vh - 22px);
     background: var(--hl-bg);
-    z-index: 999999;
+    z-index: 999;
     opacity: 0.97;
     padding: 10px;
 

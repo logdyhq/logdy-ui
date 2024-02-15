@@ -11,6 +11,7 @@ import AuthPrompt from "./components/AuthPrompt.vue"
 import StatusIndicator from "./components/StatusIndicator.vue"
 import DemoBar from "./components/DemoBar.vue"
 import Confirm from "./components/ConfirmModal.vue"
+import Import from "./components/Import.vue"
 import { useMainStore, InitSettings } from './store';
 import * as demo from "./demo";
 import loadAnalytics from './analytics';
@@ -291,6 +292,12 @@ const columnEdited = (col: Column) => {
   render()
 }
 
+const layoutLoaded = (lt: Layout) => {
+  layout.value = lt
+  storageLayout.update('main', layout.value as Layout)
+  render()
+}
+
 const columnRemoved = (colId: string) => {
   layout.value.removeColumn(colId)
   storageLayout.update('main', layout.value as Layout)
@@ -486,8 +493,14 @@ const updateSampleLine = () => {
 <template>
   <Modal @close="store.modalShow = ''" v-if="store.modalShow">
     <AuthPrompt v-if="store.modalShow == 'auth'" @success="postAuth" />
+    <Import v-if="store.modalShow == 'import'" :layout="(layout as Layout)" @layout-loaded="layoutLoaded" />
   </Modal>
   <Confirm />
+
+  <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(layout as Layout)" @edit="columnEdited"
+    @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
+    @update-sample-line="updateSampleLine" :sampleLine="sampleLine" />
+  <Drawer :row="drawer.row" :layout="(layout as Layout)" @close="drawer.row = undefined" />
   <DemoBar v-if="store.demoMode" @start="store.demoStatus = 'started'" @stop="store.demoStatus = 'stopped'"
     @mode="changeDemoMode" @add="addDemoData(100)" />
   <div :class="{ 'demo': store.demoMode }">
@@ -545,10 +558,6 @@ const updateSampleLine = () => {
           </table>
         </template>
       </div>
-      <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(layout as Layout)"
-        @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
-        @update-sample-line="updateSampleLine" :sampleLine="sampleLine" />
-      <Drawer :row="drawer.row" :layout="(layout as Layout)" @close="drawer.row = undefined" />
     </div>
   </div>
 </template>
