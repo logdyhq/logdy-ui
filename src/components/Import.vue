@@ -82,6 +82,8 @@ const importLayout = (data: string) => {
 </script>
 <template>
     <div>
+        You can export and import UI setting in this view. Only layout (columns, facets) & settings (middlewares) are
+        exported (not log messages).
         <h2>Export</h2>
         <button class="btn" @click="copy">Copy to clipboard</button>
         <button class="btn" @click="download">Save as file</button>

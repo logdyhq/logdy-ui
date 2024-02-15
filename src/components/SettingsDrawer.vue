@@ -273,6 +273,13 @@ const toggleColumnFaceted = (colId: string) => {
     selectedColumn.value = undefined
 }
 
+const toggleView = (colId: string) => {
+    selectedColumn.value = { ...props.layout.getColumn(colId) }
+    selectedColumn.value.hidden = !selectedColumn.value.hidden
+    emit('edit', selectedColumn.value)
+    selectedColumn.value = undefined
+}
+
 const removeCol = (colId: string) => {
     emit('remove', colId)
 }
@@ -387,6 +394,9 @@ const addMiddleware = () => {
                     <div class="name">{{ col.name }}</div>
                     <div class="controls">
                         <button @click="edit(col.id)" class="btn-sm">Edit</button>
+                        <button @click="toggleView(col.id)" class="btn-sm" :class="{ active: !col.hidden }">{{ col.hidden ?
+                            'Show'
+                            : 'Hide' }}</button>
                         <button @click="toggleColumnFaceted(col.id)" :class="{ 'active': col.faceted }"
                             class="btn-sm">Faceted</button>
                         <button @click="removeCol(col.id)" class="btn-sm">Remove</button>
@@ -536,6 +546,10 @@ hr {
 
     &.active {
         color: rgba(255, 255, 255, .3)
+    }
+
+    &.grey {
+        color: rgba(255, 255, 255, .5)
     }
 }
 </style>../moment.lib.ts

@@ -12,6 +12,7 @@ import StatusIndicator from "./components/StatusIndicator.vue"
 import DemoBar from "./components/DemoBar.vue"
 import Confirm from "./components/ConfirmModal.vue"
 import Import from "./components/Import.vue"
+import ExportLogs from "./components/ExportLogs.vue"
 import { useMainStore, InitSettings } from './store';
 import * as demo from "./demo";
 import loadAnalytics from './analytics';
@@ -416,6 +417,13 @@ watch(() => store.initSettings?.received, (newVal?: boolean) => {
   }
 })
 
+const hideColumn = (col: Column) => {
+  useMainStore().confirm("Are you sure you want to hide the column? You can always restore it in the settings", () => {
+    col.hidden = true
+    columnEdited(col)
+  })
+}
+
 onMounted(async () => {
   if (store.demoMode) {
     loadDemoMode()
@@ -494,6 +502,7 @@ const updateSampleLine = () => {
   <Modal @close="store.modalShow = ''" v-if="store.modalShow">
     <AuthPrompt v-if="store.modalShow == 'auth'" @success="postAuth" />
     <Import v-if="store.modalShow == 'import'" :layout="(layout as Layout)" @layout-loaded="layoutLoaded" />
+    <ExportLogs v-if="store.modalShow == 'export-logs'" />
   </Modal>
   <Confirm />
 
@@ -543,8 +552,21 @@ const updateSampleLine = () => {
           </div>
           <table class="table" cellspacing="0" cellpadding="0">
             <tr>
-              <th v-for="col in columns" :style="{ width: col.width + 'px' }">
-                {{ col.name }}
+              <th v-for="col in columns" :style="{ width: col.width + 'px', cursor: 'auto' }" class="column-name">
+                <span style="cursor: auto;">{{ col.name }}</span>
+                <div class="hide-icon"
+                  style="height: 12px; width: 12px; display: inline; visibility: hidden; opacity: 0.4; cursor: pointer; margin-left: 3px;"
+                  @click="hideColumn(col)">
+                  <svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox="0 0 24 24">
+                    <title>Hide column</title>
+                    <g id="square_arrow_left_fill" fill='none' fill-rule='evenodd'>
+                      <path
+                        d='M24 0v24H0V0h24ZM12.594 23.258l-.012.002-.071.035-.02.004-.014-.004-.071-.036c-.01-.003-.019 0-.024.006l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.016-.018Zm.264-.113-.014.002-.184.093-.01.01-.003.011.018.43.005.012.008.008.201.092c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022Zm-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.003-.011.018-.43-.003-.012-.01-.01-.184-.092Z' />
+                      <path fill='#fff'
+                        d='M6 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3H6Zm7.707 6.879L11.586 12l2.121 2.121a1 1 0 0 1-1.414 1.415l-2.829-2.829a1 1 0 0 1 0-1.414l2.829-2.829a1 1 0 1 1 1.414 1.415Z' />
+                    </g>
+                  </svg>
+                </div>
                 <div class="header-border" @mousedown="startColumnDragging(col.id)">
                   &nbsp;</div>
               </th>
@@ -697,6 +719,18 @@ const updateSampleLine = () => {
       td,
       th {
         padding: 1px 2px;
+
+      }
+
+      .column-name {
+        span {
+          pointer-events: none;
+          user-select: none;
+        }
+
+        &:hover .hide-icon {
+          visibility: visible !important;
+        }
       }
 
       th {
