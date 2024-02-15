@@ -29,7 +29,7 @@ export const useMainStore = defineStore("main", () => {
 
     const status = ref<"connected" | "not connected">("not connected")
     const anotherTab = ref<boolean>(false)
-    const modalShow = ref<"" | "auth" | "import">("")
+    const modalShow = ref<"" | "auth" | "import" | "export-logs">("")
     const password = ref<string>("")
 
     const initSettings = ref<InitSettings>()

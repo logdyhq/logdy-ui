@@ -2,7 +2,7 @@
 import { StyleValue, computed, onMounted, ref, watch } from 'vue';
 import { Row, FacetValues, Facet, Message, CellHandler, Column, Settings, Middleware } from "./types"
 import { Layout } from "./config"
-import { Storage } from "./storage"
+import { Storage, storageLogs } from "./storage"
 import Drawer from "./components/Drawer.vue"
 import SettingsDrawer from "./components/SettingsDrawer.vue"
 import FacetComponent from "./components/Facet.vue"
@@ -12,6 +12,7 @@ import StatusIndicator from "./components/StatusIndicator.vue"
 import DemoBar from "./components/DemoBar.vue"
 import Confirm from "./components/ConfirmModal.vue"
 import Import from "./components/Import.vue"
+import HideColumnIcon from "./components/HideColumnIcon.vue"
 import ExportLogs from "./components/ExportLogs.vue"
 import { useMainStore, InitSettings } from './store';
 import * as demo from "./demo";
@@ -31,8 +32,7 @@ const stickedToBottom = ref<boolean>(false)
 const columns = ref<Column[]>([])
 const sampleLineIndex = ref<number>(0)
 
-const storage = new Storage<Message>('logs')
-storage.startClearingUnknowns()
+storageLogs.startClearingUnknowns()
 
 const storageLayout = new Storage<Layout>('layout')
 const layout = ref<Layout>(new Layout('main', { leftColWidth: 300, maxMessages: 1000, middlewares: [] }))
@@ -156,13 +156,13 @@ const shouldStickToBottom = () => {
 const removeMessage = () => {
   removeFromFacet(rows.value[0])
   rows.value.splice(0, 1)
-  storage.removeFirst()
+  storageLogs.removeFirst()
 }
 
 const clearAllRows = () => {
   rows.value = []
   facets.value = {}
-  storage.removeAll()
+  storageLogs.removeAll()
 }
 
 const clearAll = () => {
@@ -170,7 +170,7 @@ const clearAll = () => {
 }
 
 const loadStorage = () => {
-  storage.load().forEach(m => {
+  storageLogs.load().forEach(m => {
     tryAddMessage(m, layout.value.settings)
   })
 }
@@ -352,7 +352,7 @@ const connectToWs = () => {
     switch (m.message_type) {
       case "log":
         tryAddMessage(m as Message, layout.value.settings)
-        storage.add(m)
+        storageLogs.add(m)
         break
       default:
         console.error(m)
@@ -464,8 +464,6 @@ const initWs = async () => {
 
   store.initSettings = init
 
-  console.log(init)
-
   let passValid = await fetch("/api/check-pass?password=" + store.getPassword())
   if (store.initSettings.authRequired && passValid.status !== 200) {
     store.modalShow = "auth"
@@ -502,7 +500,8 @@ const updateSampleLine = () => {
   <Modal @close="store.modalShow = ''" v-if="store.modalShow">
     <AuthPrompt v-if="store.modalShow == 'auth'" @success="postAuth" />
     <Import v-if="store.modalShow == 'import'" :layout="(layout as Layout)" @layout-loaded="layoutLoaded" />
-    <ExportLogs v-if="store.modalShow == 'export-logs'" />
+    <ExportLogs v-if="store.modalShow == 'export-logs'" :rows="rows" :visible-rows="displayRows"
+      :layout="(layout as Layout)" />
   </Modal>
   <Confirm />
 
@@ -535,12 +534,19 @@ const updateSampleLine = () => {
       <div class="left-col" :style="{ width: layout.settings.leftColWidth + 'px' }">
         <div class="counter">
           <span>Showing {{ displayRows.length }} out of {{ rows.length }} logs</span>
+          <br />
+          <button class="btn-sm" style="margin-top:4px" @click="useMainStore().modalShow = 'export-logs'">Export
+            messages</button>
         </div>
         <FacetComponent :facets="facets" />
       </div>
       <div class="mid-col" @mousedown="startDragging"></div>
       <div class="right-col" ref="table">
         <div v-if="columns.length === 0" style="text-align: center; padding-top:100px; font-size: 20px;">
+
+          <div v-if="useMainStore().status == 'not connected'" style="margin: 10px; padding: 5px;">Status: <strong>Not
+              connected</strong></div>
+
           No columns defined, open <span class="clickable" @click="settingsDrawer = true">Settings</span> and add
           columns<br />
           or <span class="clickable" @click="addRawColumn">add column with raw content now</span>.
@@ -557,15 +563,7 @@ const updateSampleLine = () => {
                 <div class="hide-icon"
                   style="height: 12px; width: 12px; display: inline; visibility: hidden; opacity: 0.4; cursor: pointer; margin-left: 3px;"
                   @click="hideColumn(col)">
-                  <svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox="0 0 24 24">
-                    <title>Hide column</title>
-                    <g id="square_arrow_left_fill" fill='none' fill-rule='evenodd'>
-                      <path
-                        d='M24 0v24H0V0h24ZM12.594 23.258l-.012.002-.071.035-.02.004-.014-.004-.071-.036c-.01-.003-.019 0-.024.006l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.016-.018Zm.264-.113-.014.002-.184.093-.01.01-.003.011.018.43.005.012.008.008.201.092c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022Zm-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.003-.011.018-.43-.003-.012-.01-.01-.184-.092Z' />
-                      <path fill='#fff'
-                        d='M6 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3H6Zm7.707 6.879L11.586 12l2.121 2.121a1 1 0 0 1-1.414 1.415l-2.829-2.829a1 1 0 0 1 0-1.414l2.829-2.829a1 1 0 1 1 1.414 1.415Z' />
-                    </g>
-                  </svg>
+                  <HideColumnIcon />
                 </div>
                 <div class="header-border" @mousedown="startColumnDragging(col.id)">
                   &nbsp;</div>
@@ -757,5 +755,12 @@ const updateSampleLine = () => {
       }
     }
   }
+}
+
+.btn-sm {
+  padding: 4px 6px;
+  margin-right: 4px;
+  border-radius: 4px;
+  font-size: 12px;
 }
 </style>

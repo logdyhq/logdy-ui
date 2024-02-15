@@ -1,3 +1,5 @@
+import { Message } from "./types";
+
 const APP_PREFIX = 'logdy'
 
 export class Storage<T> {
@@ -98,3 +100,5 @@ export class Storage<T> {
 export const storageApp = new Storage<{
     password?: string
 }>('app')
+
+export const storageLogs = new Storage<Message>('logs')
