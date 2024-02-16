@@ -6,6 +6,7 @@ import VueHighlightJS from 'vue3-highlightjs'
 import 'highlight.js/styles/vs2015.css'
 import moment from 'moment'
 import { createPinia } from 'pinia'
+import "./app.scss"
 
 window.moment = moment
 window.document.title = 'Logdy'

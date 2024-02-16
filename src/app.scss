@@ -163,6 +163,22 @@
   
         tr {
           cursor: pointer;
+
+          .mark {
+            display: block;
+            width: 10px;
+            font-size: 7px;
+            line-height: 1px;
+            opacity: 0.1;
+            
+            &:hover{
+              opacity: 0.7;
+            }
+
+            &.active{
+              opacity: 1;
+            }
+          }
         }
   
   
@@ -199,3 +215,5 @@
     padding: 1px;
     border-radius: 2px;
   }
+
+  @import url(facet.scss);

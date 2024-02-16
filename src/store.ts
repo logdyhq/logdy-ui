@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import { storageApp, storageLogs } from "./storage";
 import { FacetValues, Row } from "./types";
 import { Layout } from "./config";
+import { useFilterStore } from "./stores/filter";
 
 export interface Notification {
     id?: string;
@@ -94,9 +95,19 @@ export const useMainStore = defineStore("main", () => {
             }
         }
 
+        if (!row) {
+            return
+        }
+
+        if (!row.opened) {
+            useFilterStore().changeFilter('read', 1)
+            useFilterStore().changeFilter('unread', -1)
+        }
+
         row.open = true;
+        row.opened = true;
         drawer.value.row = row;
-        storageLogs.update(row.id, { id: row.id, message: row.msg, opened: true })
+        storageLogs.update(row.id, { id: row.id, message: row.msg, opened: true, starred: row.starred })
     }
 
     const closeLogDrawer = () => {
@@ -106,6 +117,12 @@ export const useMainStore = defineStore("main", () => {
         drawer.value.row.open = false
         drawer.value.row.opened = true;
         drawer.value.row = undefined
+    }
+
+    const toggleRowMark = (row: Row) => {
+        row.starred = !row.starred
+        useFilterStore().changeFilter('starred', row.starred ? 1 : -1)
+        storageLogs.update(row.id, { id: row.id, message: row.msg, opened: row.opened, starred: row.starred })
     }
 
     const channel = new BroadcastChannel('tab-activity');
@@ -140,7 +157,14 @@ export const useMainStore = defineStore("main", () => {
             })
         }
 
+        let filters = useFilterStore().enabledFilters
+        console.log(filters)
         return rows.value.filter((r, k) => {
+            if (filters.length > 0) {
+                if (filters.includes('starred') && !r.starred) return false
+                if (filters.includes('read') && !r.opened) return false
+                if (filters.includes('unread') && r.opened) return false
+            }
             if (Object.keys(selectedFacets).length === 0) return true
             let sel = { ...selectedFacets }
             let cnt = Object.keys(sel).length
@@ -190,6 +214,8 @@ export const useMainStore = defineStore("main", () => {
         displayRows,
 
         facets,
-        searchbar
+        searchbar,
+
+        toggleRowMark
     };
 });

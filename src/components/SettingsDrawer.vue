@@ -365,7 +365,7 @@ const addMiddleware = () => {
                     <div v-for="m in settings.middlewares" style="margin:10px 0">
                         {{ m.name }}
                         <button @click="editMiddleware(m.id)" class="btn-sm">Edit</button>
-                        <button @click="removeMiddleware(m.id)" class="btn-sm">Remove</button>
+                        <button @click="removeMiddleware(m.id)" class="btn-sm btn-danger">Remove</button>
                     </div>
                     <div v-if="selectedMiddleware">
                         <div>Name</div>
@@ -399,12 +399,10 @@ const addMiddleware = () => {
                     <div class="name">{{ col.name }}</div>
                     <div class="controls">
                         <button @click="edit(col.id)" class="btn-sm">Edit</button>
-                        <button @click="toggleView(col.id)" class="btn-sm" :class="{ active: !col.hidden }">{{ col.hidden ?
-                            'Show'
-                            : 'Hide' }}</button>
+                        <button @click="toggleView(col.id)" class="btn-sm" :class="{ active: !col.hidden }">Toggle</button>
                         <button @click="toggleColumnFaceted(col.id)" :class="{ 'active': col.faceted }"
                             class="btn-sm">Faceted</button>
-                        <button @click="removeCol(col.id)" class="btn-sm">Remove</button>
+                        <button @click="removeCol(col.id)" class="btn-sm btn-danger">Remove</button>
                         <button :disabled="k === 0" @click="$emit('move', col.id, -1)" class="btn-sm">Move up</button>
                         <button :disabled="k === layout.columns.length - 1" @click="$emit('move', col.id, 1)"
                             class="btn-sm">Move

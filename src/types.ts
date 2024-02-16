@@ -124,16 +124,19 @@ export type Column = {
     faceted?: boolean
 }
 
-export type StoredMessage = {
-    id?: string,
+export type MessageMetadata = {
     opened?: boolean,
+    starred?: boolean
+}
+
+export type StoredMessage = MessageMetadata & {
+    id?: string,
     message: Message
 }
 
-export type Row = {
+export type Row = MessageMetadata & {
     id: string,
     open?: boolean,
-    opened?: boolean,
     orderKey?: number,
     msg: Message,
     cells: CellHandler[], // these are the columns in the table

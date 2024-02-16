@@ -6,6 +6,7 @@ import { storageLayout, storageLogs } from "./storage"
 import Drawer from "./components/Drawer.vue"
 import SettingsDrawer from "./components/SettingsDrawer.vue"
 import FacetComponent from "./components/Facet.vue"
+import Filter from "./components/Filter.vue"
 import Modal from "./components/Modal.vue"
 import AuthPrompt from "./components/AuthPrompt.vue"
 import StatusIndicator from "./components/StatusIndicator.vue"
@@ -15,13 +16,14 @@ import Import from "./components/Import.vue"
 import HideColumnIcon from "./components/HideColumnIcon.vue"
 import ExportLogs from "./components/ExportLogs.vue"
 import { useMainStore, InitSettings } from './store';
+import { useFilterStore } from "./stores/filter";
 import { startDragging, endDragging, startColumnDragging } from './dragging';
 import * as demo from "./demo";
 import { initKeyEventListeners } from "./key_events"
 import loadAnalytics from './analytics';
-import "./app.scss"
 
 const store = useMainStore()
+const storeFilter = useFilterStore()
 
 const table = ref<HTMLElement>()
 const settingsDrawer = ref<boolean>(false)
@@ -136,9 +138,7 @@ const addMessages = (msgs: Message[]) => {
       fields,
       facets: cells.map(c => c.facets || []).flat().concat(fields.map(c => c.facets || []).flat())
     })
-
   })
-
 
   if (store.rows.length >= store.layout.settings.maxMessages) {
     if (store.rows.length > store.layout.settings.maxMessages) {
@@ -185,16 +185,21 @@ const clearAll = () => {
 const loadStorage = () => {
   let msgs = storageLogs.load()
   let openIds: Record<string, number> = {}
+  storeFilter.reset()
   tryAddMessage(msgs.map(sm => {
     if (sm.opened) openIds[sm.id!] = 1
     return sm.message
   }), store.layout.settings)
 
   msgs.forEach((msg, k) => {
-    if (!openIds[store.rows[k].id!]) {
-      return
+    msg.starred && storeFilter.changeFilter('starred', 1)
+    if (msg.opened) storeFilter.changeFilter('read', 1)
+    else storeFilter.changeFilter('unread', 1);
+
+    store.rows[k].starred = msg.starred
+    if (openIds[store.rows[k].id!]) {
+      store.rows[k].opened = msg.opened
     }
-    store.rows[k].opened = msg.opened
   })
 }
 
@@ -304,6 +309,7 @@ const connectToWs = () => {
     switch (m.message_type) {
       case "log_bulk":
         tryAddMessage(m.messages, store.layout.settings);
+        storeFilter.changeFilter('unread', (m.messages as Message[]).length);
         (m.messages as Message[]).forEach(msg => {
           storageLogs.add({ id: msg.id, message: msg }, msg.id)
         })
@@ -363,6 +369,7 @@ const addDemoData = (count: number = 1) => {
       origin,
       ts: new Date().getTime(),
     }], store.layout.settings)
+    storeFilter.changeFilter('unread', 1);
   }
 }
 
@@ -383,11 +390,11 @@ onMounted(async () => {
   if (store.demoMode) {
     loadDemoMode()
     loadAnalytics(true)
+    render()
   } else {
     await initWs()
   }
 
-  render()
 
   initKeyEventListeners()
 
@@ -407,14 +414,14 @@ const postAuth = () => {
   loadConfig()
 }
 
-const initWs = async () => {
+const initWs = async (): Promise<boolean> => {
   let res = await fetch("/api/status")
 
   let init
   try {
     init = await res.json() as InitSettings
   } catch (e) {
-    return
+    return false
   }
 
   store.initSettings = init
@@ -425,6 +432,8 @@ const initWs = async () => {
   } else {
     postAuth()
   }
+
+  return true
 }
 
 const reorderColumns = (colId: string, diff: number) => {
@@ -493,6 +502,7 @@ const updateSampleLine = () => {
           <button class="btn-sm" style="margin-top:4px" @click="useMainStore().modalShow = 'export-logs'">Export
             messages</button>
         </div>
+        <Filter />
         <FacetComponent :facets="store.facets" />
       </div>
       <div class="mid-col" @mousedown="startDragging"></div>
@@ -515,6 +525,7 @@ const updateSampleLine = () => {
           </div>
           <table class="table" cellspacing="0" cellpadding="0">
             <tr>
+              <th></th>
               <th v-for="col in columns" :style="{ width: col.width + 'px', cursor: 'auto' }" class="column-name">
                 <span style="cursor: auto;">{{ col.name }}</span>
                 <div class="hide-icon"
@@ -528,6 +539,11 @@ const updateSampleLine = () => {
             </tr>
             <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row in store.displayRows"
               @click="store.openLogDrawer(row)" :style="(row.msg.style as StyleValue || {})">
+              <td>
+                <span class="mark" :class="{ active: row.starred }" @click.stop="store.toggleRowMark(row)">
+                  ⬤
+                </span>
+              </td>
               <td class="cell" v-for="_, k2 in columns" :style="row.cells[k2].style as StyleValue || {}">
                 <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
               </td>
