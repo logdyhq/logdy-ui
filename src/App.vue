@@ -179,6 +179,11 @@ const loadConfig = (load?: Layout) => {
 
   let layouts = load ? [load] : storageLayout.load()
 
+  if (store.initSettings?.configStr) {
+    console.log("Loading Layout from backend config")
+    layouts = [JSON.parse(store.initSettings?.configStr)]
+  }
+
   if (layouts[0]) {
     layout.value.loadFromObj(layouts[0])
   } else {
@@ -460,7 +465,12 @@ const postAuth = () => {
 const initWs = async () => {
   let res = await fetch("/api/status")
 
-  let init = await res.json() as InitSettings
+  let init
+  try {
+    init = await res.json() as InitSettings
+  } catch (e) {
+    return
+  }
 
   store.initSettings = init
 
@@ -547,9 +557,11 @@ const updateSampleLine = () => {
           <div v-if="useMainStore().status == 'not connected'" style="margin: 10px; padding: 5px;">Status: <strong>Not
               connected</strong></div>
 
-          No columns defined, open <span class="clickable" @click="settingsDrawer = true">Settings</span> and add
-          columns<br />
-          or <span class="clickable" @click="addRawColumn">add column with raw content now</span>.
+          <template v-else>
+            No columns defined, open <span class="clickable" @click="settingsDrawer = true">Settings</span> and add
+            columns<br />
+            or <span class="clickable" @click="addRawColumn">add column with raw content now</span>.
+          </template>
         </div>
         <template v-else>
           <div class="btn stick" @click="stickToBottom" :class="{ sticked: stickedToBottom }">

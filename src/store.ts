@@ -13,6 +13,9 @@ export interface InitSettings {
     received: boolean;
     analyticsEnabled: boolean;
     authRequired: boolean;
+
+    // this will hold a Layout JSON to load from the backend
+    configStr: string;
 }
 
 export const useMainStore = defineStore("main", () => {
