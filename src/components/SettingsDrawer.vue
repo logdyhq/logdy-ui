@@ -57,6 +57,12 @@ type Message = {
      */
     ts: number,
     /**
+     * A numerical key by which all of the messages will be ordered. Setting this key is useful
+     * when you're dealing with multiple sources of logs and want them ordered, 
+     * for example by the timestamp, then you can assign the timestamp value as this key.
+     */
+    order_key?: number,
+    /**
      * Specifies the origin of the message
      */
      origin?: {

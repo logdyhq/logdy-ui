@@ -135,12 +135,19 @@ const addMessage = (m: Message) => {
     }
   })
 
-  rows.value.push({
+  let toAdd = {
+    orderKey: m.order_key || 0,
     msg: m,
     cells,
     fields,
     facets: cells.map(c => c.facets || []).flat().concat(fields.map(c => c.facets || []).flat())
-  })
+  }
+
+  rows.value.push(toAdd)
+
+  if (toAdd.orderKey) {
+    rows.value.sort((a, b) => { return (a.orderKey || 0) >= (b.orderKey || 0) ? 1 : -1 })
+  }
 
   setTimeout(() => {
     if (shouldStickToBottom()) {
