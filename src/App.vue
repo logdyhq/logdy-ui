@@ -158,7 +158,7 @@ const addMessages = (msgs: Message[]) => {
   }
 
   setTimeout(() => {
-    if (shouldStickToBottom()) {
+    if (stickedToBottom.value) {
       stickToBottom()
     }
   }, 10)
