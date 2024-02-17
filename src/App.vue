@@ -79,11 +79,11 @@ const processMiddlewares = (msg: Message, middlewares: Middleware[]): Message | 
   return msg
 }
 
-const tryAddMessage = (m: Message, settings: Settings) => {
+const tryAddMessage = (msgs: Message[], settings: Settings) => {
   try {
-    let msg = processMiddlewares(m, settings.middlewares)
-    if (msg) {
-      addMessage(m)
+    let mm = msgs.map(m => processMiddlewares(m, settings.middlewares)).filter(m => m) as Message[]
+    if (msgs) {
+      addMessages(mm)
     }
   } catch (e) {
     // todo: messages that cannot be processed should land in DLQ or some kind of buffer
@@ -91,61 +91,69 @@ const tryAddMessage = (m: Message, settings: Settings) => {
   }
 }
 
-const addMessage = (m: Message) => {
-  if (m.content.length === 0) {
+const addMessages = (msgs: Message[]) => {
+  if (msgs.length === 0) {
     return
   }
 
+  let toAdd: Row[] = []
+  msgs.forEach(m => {
+
+    let cells = layout.value.columns.filter(c => !c.hidden).map((l): CellHandler => {
+      try {
+        let h = l.handler!(m)
+        if (l.faceted) {
+          h.facets = (h.facets || [])
+          h.facets.push({
+            name: l.name,
+            value: h.text
+          })
+        }
+        h.facets?.forEach(addToFacet)
+        return h
+      } catch (e) {
+        console.log(e)
+        return { text: "error" }
+      }
+    })
+    let fields = layout.value.columns.filter(c => c.hidden).map((l): CellHandler => {
+      try {
+        let h = l.handler!(m)
+        if (l.faceted) {
+          h.facets = (h.facets || [])
+          h.facets.push({
+            name: l.name,
+            value: h.text
+          })
+        }
+        h.facets?.forEach(addToFacet)
+        return h
+      } catch (e) {
+        console.log(e)
+        return { text: "error" }
+      }
+    })
+
+    toAdd.push({
+      orderKey: m.order_key || 0,
+      msg: m,
+      cells,
+      fields,
+      facets: cells.map(c => c.facets || []).flat().concat(fields.map(c => c.facets || []).flat())
+    })
+
+  })
+
+
   if (rows.value.length >= layout.value.settings.maxMessages) {
-    removeMessage()
-  }
-
-  let cells = layout.value.columns.filter(c => !c.hidden).map((l): CellHandler => {
-    try {
-      let h = l.handler!(m)
-      if (l.faceted) {
-        h.facets = (h.facets || [])
-        h.facets.push({
-          name: l.name,
-          value: h.text
-        })
-      }
-      h.facets?.forEach(addToFacet)
-      return h
-    } catch (e) {
-      console.log(e)
-      return { text: "error" }
+    if (rows.value.length > layout.value.settings.maxMessages) {
+      removeMessage(rows.value.length - layout.value.settings.maxMessages)
     }
-  })
-  let fields = layout.value.columns.filter(c => c.hidden).map((l): CellHandler => {
-    try {
-      let h = l.handler!(m)
-      if (l.faceted) {
-        h.facets = (h.facets || [])
-        h.facets.push({
-          name: l.name,
-          value: h.text
-        })
-      }
-      h.facets?.forEach(addToFacet)
-      return h
-    } catch (e) {
-      console.log(e)
-      return { text: "error" }
-    }
-  })
-
-  let toAdd = {
-    orderKey: m.order_key || 0,
-    msg: m,
-    cells,
-    fields,
-    facets: cells.map(c => c.facets || []).flat().concat(fields.map(c => c.facets || []).flat())
+    removeMessage(msgs.length)
   }
+  rows.value.push(...toAdd)
 
-  rows.value.push(toAdd)
-
-  if (toAdd.orderKey) {
+  if ((toAdd[0] as any).orderKey) {
     rows.value.sort((a, b) => { return (a.orderKey || 0) >= (b.orderKey || 0) ? 1 : -1 })
   }
 
@@ -160,10 +168,13 @@ const shouldStickToBottom = () => {
   return table.value && (table.value.scrollTop + table.value.offsetHeight + 20) >= table.value.scrollHeight
 }
 
-const removeMessage = () => {
-  removeFromFacet(rows.value[0])
-  rows.value.splice(0, 1)
-  storageLogs.removeFirst()
+const removeMessage = (count: number = 1) => {
+  for (let i = 0; i < count; i++) {
+    removeFromFacet(rows.value[i])
+    storageLogs.removeFirst()
+  }
+  storageLogs.clearUnknown()
+  rows.value.splice(0, count)
 }
 
 const clearAllRows = () => {
@@ -177,9 +188,7 @@ const clearAll = () => {
 }
 
 const loadStorage = () => {
-  storageLogs.load().forEach(m => {
-    tryAddMessage(m, layout.value.settings)
-  })
+  tryAddMessage(storageLogs.load(), layout.value.settings)
 }
 
 const loadConfig = (load?: Layout) => {
@@ -362,9 +371,11 @@ const connectToWs = () => {
     let m = JSON.parse(msg.data)
 
     switch (m.message_type) {
-      case "log":
-        tryAddMessage(m as Message, layout.value.settings)
-        storageLogs.add(m)
+      case "log_bulk":
+        tryAddMessage(m.messages, layout.value.settings);
+        (m.messages as Message[]).forEach(msg => {
+          storageLogs.add(msg)
+        })
         break
       default:
         console.error(m)
@@ -412,14 +423,14 @@ const addDemoData = (count: number = 1) => {
 
   while (count--) {
     let data = demo.generateData(isJson)
-    tryAddMessage({
+    tryAddMessage([{
       content: isJson ? JSON.stringify(data) : data as string,
       is_json: true,
       log_type: 0,
       json_content: isJson ? data : null,
       origin,
       ts: new Date().getTime(),
-    }, layout.value.settings)
+    }], layout.value.settings)
   }
 }
 

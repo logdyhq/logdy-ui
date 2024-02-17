@@ -56,6 +56,18 @@ export class Storage<T> {
         })
     }
 
+    count(): number {
+        let c = 0
+        for (let i in localStorage) {
+            if (!this.doesBelong(i)) {
+                continue
+            }
+            c++
+        }
+
+        return c
+    }
+
     getOne(id: string): T | undefined {
         let item = localStorage.getItem(this.id(id))
         return item ? JSON.parse(item) : undefined
@@ -90,10 +102,8 @@ export class Storage<T> {
     }
 
     removeFirst() {
-        let id = this.keys[0]
         this.keys.splice(0, 1)
         // console.debug("removing first", id)
-        localStorage.removeItem(id)
     }
 }
 

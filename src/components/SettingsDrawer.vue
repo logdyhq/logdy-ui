@@ -174,7 +174,6 @@ onMounted(() => {
 
     cancelSettings()
 
-
     watch(() => settings.value.maxMessages, () => {
         settingsChanged.value = true
     })
@@ -209,7 +208,7 @@ const save = () => {
 }
 
 const saveSettings = () => {
-    emit('settings-update', settings.value!)
+    emit('settings-update', { ...settings.value! })
 }
 
 const cancelSettings = () => {
