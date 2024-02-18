@@ -27,7 +27,7 @@ defineEmits<{
                     <ArrowDown /> Prev
                 </div>
 
-                <button @click="$emit('close')">Close</button>
+                <button @click="$emit('close')">Close <kbd>Esc</kbd></button>
             </div>
             <h3>Table columns</h3>
             <div v-for="col, k in layout?.columns.filter(c => !c.hidden)">
