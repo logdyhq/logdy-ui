@@ -9,6 +9,10 @@ export type Settings = {
 
 export type Message = {
     /**
+     * A random identifier for a message
+     */
+    id: string,
+    /**
      * Whether a log was produced as STDOUT (=1) or STDERR (=2)
      */
     log_type: number,
@@ -120,7 +124,16 @@ export type Column = {
     faceted?: boolean
 }
 
+export type StoredMessage = {
+    id?: string,
+    opened?: boolean,
+    message: Message
+}
+
 export type Row = {
+    id: string,
+    open?: boolean,
+    opened?: boolean,
     orderKey?: number,
     msg: Message,
     cells: CellHandler[], // these are the columns in the table

@@ -1,8 +1,8 @@
-import { Message } from "./types";
+import { StoredMessage } from "./types";
 
 const APP_PREFIX = 'logdy'
 
-export class Storage<T> {
+export class Storage<T extends { id?: string }> {
     private lastInsertAt: string = "";
     private sameInserts: number = 0;
 
@@ -79,12 +79,13 @@ export class Storage<T> {
             k = k + "." + (++this.sameInserts).toString()
         }
         let _id = this.id(id || k)
+        item.id = _id;
         localStorage.setItem(_id, JSON.stringify(item))
         this.lastInsertAt = k
 
         this.keys.push(_id)
         return {
-            id: _id
+            id: k.toString()
         }
     }
 
@@ -108,7 +109,8 @@ export class Storage<T> {
 }
 
 export const storageApp = new Storage<{
+    id?: string,
     password?: string
 }>('app')
 
-export const storageLogs = new Storage<Message>('logs')
+export const storageLogs = new Storage<StoredMessage>('logs')

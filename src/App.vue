@@ -135,6 +135,7 @@ const addMessages = (msgs: Message[]) => {
     })
 
     toAdd.push({
+      id: m.id,
       orderKey: m.order_key || 0,
       msg: m,
       cells,
@@ -188,7 +189,19 @@ const clearAll = () => {
 }
 
 const loadStorage = () => {
-  tryAddMessage(storageLogs.load(), layout.value.settings)
+  let msgs = storageLogs.load()
+  let openIds: Record<string, number> = {}
+  tryAddMessage(msgs.map(sm => {
+    if (sm.opened) openIds[sm.id!] = 1
+    return sm.message
+  }), layout.value.settings)
+
+  msgs.forEach((msg, k) => {
+    if (!openIds[rows.value[k].id!]) {
+      return
+    }
+    rows.value[k].opened = msg.opened
+  })
 }
 
 const loadConfig = (load?: Layout) => {
@@ -374,7 +387,7 @@ const connectToWs = () => {
       case "log_bulk":
         tryAddMessage(m.messages, layout.value.settings);
         (m.messages as Message[]).forEach(msg => {
-          storageLogs.add(msg)
+          storageLogs.add({ id: msg.id, message: msg }, msg.id)
         })
         break
       default:
@@ -424,6 +437,7 @@ const addDemoData = (count: number = 1) => {
   while (count--) {
     let data = demo.generateData(isJson)
     tryAddMessage([{
+      id: new Date().getTime().toString(),
       content: isJson ? JSON.stringify(data) : data as string,
       is_json: true,
       log_type: 0,
@@ -522,6 +536,22 @@ const updateSampleLine = () => {
   sampleLineIndex.value = Math.floor(Math.random() * rows.value.length)
 }
 
+const openLogDrawer = (row: Row) => {
+  closeLogDrawer()
+  row.open = true;
+  drawer.value.row = row;
+  storageLogs.update(row.id, { id: row.id, message: row.msg, opened: true })
+}
+
+const closeLogDrawer = () => {
+  if (!drawer.value.row) {
+    return
+  }
+  drawer.value.row.open = false
+  drawer.value.row.opened = true;
+  drawer.value.row = undefined
+}
+
 </script>
 
 <template>
@@ -536,7 +566,7 @@ const updateSampleLine = () => {
   <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(layout as Layout)" @edit="columnEdited"
     @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
     @update-sample-line="updateSampleLine" :sampleLine="sampleLine" />
-  <Drawer :row="drawer.row" :layout="(layout as Layout)" @close="drawer.row = undefined" />
+  <Drawer :row="drawer.row" :layout="(layout as Layout)" @close="closeLogDrawer" />
   <DemoBar v-if="store.demoMode" @start="store.demoStatus = 'started'" @stop="store.demoStatus = 'stopped'"
     @mode="changeDemoMode" @add="addDemoData(100)" />
   <div :class="{ 'demo': store.demoMode }">
@@ -599,8 +629,8 @@ const updateSampleLine = () => {
                   &nbsp;</div>
               </th>
             </tr>
-            <tr class="row" v-for="row in displayRows" @click="drawer.row = row"
-              :style="(row.msg.style as StyleValue || {})">
+            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row in displayRows"
+              @click="openLogDrawer(row)" :style="(row.msg.style as StyleValue || {})">
               <td class="cell" v-for="_, k2 in columns" :style="row.cells[k2].style as StyleValue || {}">
                 <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
               </td>
@@ -780,8 +810,20 @@ const updateSampleLine = () => {
         cursor: pointer;
       }
 
-      tr.row:hover {
+
+      tr.row.opened {
         background-color: var(--hl-bg);
+        opacity: 0.8;
+      }
+
+      tr.row:hover {
+        background-color: var(--hl-bg) !important;
+        opacity: 1;
+      }
+
+      tr.row.open {
+        font-weight: 800;
+        background-color: var(--hl-bg3) !important;
       }
     }
   }

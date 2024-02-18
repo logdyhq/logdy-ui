@@ -2,6 +2,7 @@ import { Column, Settings } from "./types"
 import ts from "typescript"
 
 export class Layout {
+    id?: string;
     name: string;
     columns: Column[] = [];
 
