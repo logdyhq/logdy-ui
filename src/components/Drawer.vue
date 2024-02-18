@@ -2,6 +2,8 @@
 import { Row } from '../types';
 import { Layout } from "../config"
 import { ref } from 'vue';
+import ArrowUp from './icon/ArrowUp.vue'
+import ArrowDown from './icon/ArrowDown.vue'
 
 withDefaults(defineProps<{
     row?: Row,
@@ -20,6 +22,11 @@ defineEmits<{
     <div class="drawer" v-if="row">
         <div class="inner-drawer">
             <div class="header">
+                <div style="margin-right: 10px;">
+                    <ArrowUp /> Next /
+                    <ArrowDown /> Prev
+                </div>
+
                 <button @click="$emit('close')">Close</button>
             </div>
             <h3>Table columns</h3>
@@ -81,8 +88,9 @@ defineEmits<{
 
 
         .header {
-            width: 100%;
-            text-align: right;
+            display: flex;
+            align-items: center;
+            float: right;
         }
     }
 

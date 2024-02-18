@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { storageApp } from "./storage";
+import { storageApp, storageLogs } from "./storage";
 import { Row } from "./types";
 import { Layout } from "./config";
 
@@ -36,11 +36,14 @@ export const useMainStore = defineStore("main", () => {
     const anotherTab = ref<boolean>(false)
     const modalShow = ref<"" | "auth" | "import" | "export-logs">("")
     const password = ref<string>("")
+    const stickedToBottom = ref<boolean>(false)
+    const rows = ref<Row[]>([])
 
     const initSettings = ref<InitSettings>()
 
     const drawer = ref<{
-        row?: Row
+        row?: Row,
+        idx?: number
     }>({})
 
     const layout = ref<Layout>(new Layout('main', { leftColWidth: 300, maxMessages: 1000, middlewares: [] }))
@@ -74,6 +77,29 @@ export const useMainStore = defineStore("main", () => {
         confirmFn = null
         confirmMsg.value = ""
         confirmShow.value = false
+    }
+
+    const openLogDrawer = (k: number) => {
+
+        if (!rows.value[k]) {
+            return
+        }
+
+        closeLogDrawer()
+        let row = rows.value[k]
+        row.open = true;
+        drawer.value.row = row;
+        drawer.value.idx = k
+        storageLogs.update(row.id, { id: row.id, message: row.msg, opened: true })
+    }
+
+    const closeLogDrawer = () => {
+        if (!drawer.value.row) {
+            return
+        }
+        drawer.value.row.open = false
+        drawer.value.row.opened = true;
+        drawer.value.row = undefined
     }
 
     const channel = new BroadcastChannel('tab-activity');
@@ -113,7 +139,14 @@ export const useMainStore = defineStore("main", () => {
         setPassword,
         getPassword,
 
+        stickedToBottom,
+
         drawer,
-        layout
+        openLogDrawer,
+        closeLogDrawer,
+
+        layout,
+
+        rows
     };
 });

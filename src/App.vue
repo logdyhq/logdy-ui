@@ -17,18 +17,18 @@ import ExportLogs from "./components/ExportLogs.vue"
 import { useMainStore, InitSettings } from './store';
 import { startDragging, endDragging, startColumnDragging } from './dragging';
 import * as demo from "./demo";
+import { initKeyEventListeners } from "./key_events"
 import loadAnalytics from './analytics';
 import "./app.scss"
 
 const store = useMainStore()
 
-const rows = ref<Row[]>([])
 const facets = ref<FacetValues>({})
 const table = ref<HTMLElement>()
 
 const searchbar = ref<string>("")
 const settingsDrawer = ref<boolean>(false)
-const stickedToBottom = ref<boolean>(false)
+
 const columns = ref<Column[]>([])
 const sampleLineIndex = ref<number>(0)
 
@@ -143,20 +143,20 @@ const addMessages = (msgs: Message[]) => {
   })
 
 
-  if (rows.value.length >= store.layout.settings.maxMessages) {
-    if (rows.value.length > store.layout.settings.maxMessages) {
-      removeMessage(rows.value.length - store.layout.settings.maxMessages)
+  if (store.rows.length >= store.layout.settings.maxMessages) {
+    if (store.rows.length > store.layout.settings.maxMessages) {
+      removeMessage(store.rows.length - store.layout.settings.maxMessages)
     }
     removeMessage(msgs.length)
   }
-  rows.value.push(...toAdd)
+  store.rows.push(...toAdd)
 
   if ((toAdd[0] as any).orderKey) {
-    rows.value.sort((a, b) => { return (a.orderKey || 0) >= (b.orderKey || 0) ? 1 : -1 })
+    store.rows.sort((a, b) => { return (a.orderKey || 0) >= (b.orderKey || 0) ? 1 : -1 })
   }
 
   setTimeout(() => {
-    if (stickedToBottom.value) {
+    if (store.stickedToBottom) {
       stickToBottom()
     }
   }, 10)
@@ -168,15 +168,15 @@ const shouldStickToBottom = () => {
 
 const removeMessage = (count: number = 1) => {
   for (let i = 0; i < count; i++) {
-    removeFromFacet(rows.value[i])
+    removeFromFacet(store.rows[i])
     storageLogs.removeFirst()
   }
   storageLogs.clearUnknown()
-  rows.value.splice(0, count)
+  store.rows.splice(0, count)
 }
 
 const clearAllRows = () => {
-  rows.value = []
+  store.rows = []
   facets.value = {}
   storageLogs.removeAll()
 }
@@ -194,10 +194,10 @@ const loadStorage = () => {
   }), store.layout.settings)
 
   msgs.forEach((msg, k) => {
-    if (!openIds[rows.value[k].id!]) {
+    if (!openIds[store.rows[k].id!]) {
       return
     }
-    rows.value[k].opened = msg.opened
+    store.rows[k].opened = msg.opened
   })
 }
 
@@ -236,7 +236,7 @@ const displayRows = computed(() => {
     })
   }
 
-  return rows.value.filter(r => {
+  return store.rows.filter(r => {
     if (Object.keys(selectedFacets).length === 0) return true
     let sel = { ...selectedFacets }
     let cnt = Object.keys(sel).length
@@ -301,7 +301,7 @@ const settingsUpdate = (settings: Settings) => {
 }
 
 const render = () => {
-  rows.value = []
+  store.rows = []
   facets.value = {}
   loadColumnsFromLayout()
   loadStorage()
@@ -425,20 +425,15 @@ onMounted(async () => {
 
   render()
 
-  document.addEventListener("keyup", (event: KeyboardEvent) => {
-    if (event.code === 'Escape') {
-      store.drawer.row = undefined
-    }
-  });
+  initKeyEventListeners()
 
   table.value?.addEventListener("scroll", () => {
     if (!shouldStickToBottom()) {
-      stickedToBottom.value = false
+      store.stickedToBottom = false
     } else {
-      stickedToBottom.value = true
+      store.stickedToBottom = true
     }
   })
-
 })
 
 const postAuth = () => {
@@ -483,27 +478,11 @@ const changeDemoMode = (mode: "json" | "string") => {
 }
 
 const sampleLine = computed(() => {
-  return rows.value && rows.value[sampleLineIndex.value] && rows.value[sampleLineIndex.value].msg
+  return store.rows && store.rows[sampleLineIndex.value] && store.rows[sampleLineIndex.value].msg
 })
 
 const updateSampleLine = () => {
-  sampleLineIndex.value = Math.floor(Math.random() * rows.value.length)
-}
-
-const openLogDrawer = (row: Row) => {
-  closeLogDrawer()
-  row.open = true;
-  store.drawer.row = row;
-  storageLogs.update(row.id, { id: row.id, message: row.msg, opened: true })
-}
-
-const closeLogDrawer = () => {
-  if (!store.drawer.row) {
-    return
-  }
-  store.drawer.row.open = false
-  store.drawer.row.opened = true;
-  store.drawer.row = undefined
+  sampleLineIndex.value = Math.floor(Math.random() * store.rows.length)
 }
 
 </script>
@@ -512,7 +491,7 @@ const closeLogDrawer = () => {
   <Modal @close="store.modalShow = ''" v-if="store.modalShow">
     <AuthPrompt v-if="store.modalShow == 'auth'" @success="postAuth" />
     <Import v-if="store.modalShow == 'import'" :layout="(store.layout as Layout)" @layout-loaded="layoutLoaded" />
-    <ExportLogs v-if="store.modalShow == 'export-logs'" :rows="rows" :visible-rows="displayRows"
+    <ExportLogs v-if="store.modalShow == 'export-logs'" :rows="store.rows" :visible-rows="displayRows"
       :layout="(store.layout as Layout)" />
   </Modal>
   <Confirm />
@@ -520,7 +499,7 @@ const closeLogDrawer = () => {
   <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(store.layout as Layout)"
     @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
     @update-sample-line="updateSampleLine" :sampleLine="sampleLine" />
-  <Drawer :row="store.drawer.row" :layout="(store.layout as Layout)" @close="closeLogDrawer" />
+  <Drawer :row="store.drawer.row" :layout="(store.layout as Layout)" @close="store.closeLogDrawer" />
   <DemoBar v-if="store.demoMode" @start="store.demoStatus = 'started'" @stop="store.demoStatus = 'stopped'"
     @mode="changeDemoMode" @add="addDemoData(100)" />
   <div :class="{ 'demo': store.demoMode }">
@@ -545,7 +524,7 @@ const closeLogDrawer = () => {
     <div class="layout" @mouseup="endDragging">
       <div class="left-col" :style="{ width: store.layout.settings.leftColWidth + 'px' }">
         <div class="counter">
-          <span>Showing {{ displayRows.length }} out of {{ rows.length }} logs</span>
+          <span>Showing {{ displayRows.length }} out of {{ store.rows.length }} logs</span>
           <br />
           <button class="btn-sm" style="margin-top:4px" @click="useMainStore().modalShow = 'export-logs'">Export
             messages</button>
@@ -566,8 +545,8 @@ const closeLogDrawer = () => {
           </template>
         </div>
         <template v-else>
-          <div class="btn stick" @click="stickToBottom" :class="{ sticked: stickedToBottom }">
-            <template v-if="!stickedToBottom">Stick to bottom</template>
+          <div class="btn stick" @click="stickToBottom" :class="{ sticked: store.stickedToBottom }">
+            <template v-if="!store.stickedToBottom">Stick to bottom</template>
             <template v-else>Sticked</template>
           </div>
           <table class="table" cellspacing="0" cellpadding="0">
@@ -583,8 +562,8 @@ const closeLogDrawer = () => {
                   &nbsp;</div>
               </th>
             </tr>
-            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row in displayRows"
-              @click="openLogDrawer(row)" :style="(row.msg.style as StyleValue || {})">
+            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row, k in displayRows"
+              @click="store.openLogDrawer(k)" :style="(row.msg.style as StyleValue || {})">
               <td class="cell" v-for="_, k2 in columns" :style="row.cells[k2].style as StyleValue || {}">
                 <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
               </td>
