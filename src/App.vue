@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { StyleValue, computed, onMounted, ref, watch } from 'vue';
-import { Row, FacetValues, Facet, Message, CellHandler, Column, Settings, Middleware } from "./types"
+import { Row, Facet, Message, CellHandler, Column, Settings, Middleware } from "./types"
 import { Layout } from "./config"
 import { storageLayout, storageLogs } from "./storage"
 import Drawer from "./components/Drawer.vue"
@@ -23,10 +23,7 @@ import "./app.scss"
 
 const store = useMainStore()
 
-const facets = ref<FacetValues>({})
 const table = ref<HTMLElement>()
-
-const searchbar = ref<string>("")
 const settingsDrawer = ref<boolean>(false)
 
 const columns = ref<Column[]>([])
@@ -35,31 +32,31 @@ const sampleLineIndex = ref<number>(0)
 storageLogs.startClearingUnknowns()
 
 const addToFacet = (f: Facet) => {
-  if (!facets.value[f.name]) {
-    facets.value[f.name] = {
+  if (!store.facets[f.name]) {
+    store.facets[f.name] = {
       items: [],
       toggled: true,
       name: f.name
     }
   }
-  let idx = facets.value[f.name].items.findIndex(v => v.label === f.value)
+  let idx = store.facets[f.name].items.findIndex(v => v.label === f.value)
   if (idx < 0) {
-    facets.value[f.name].items.push({
+    store.facets[f.name].items.push({
       count: 0,
       selected: false,
       label: f.value
     })
-    idx = facets.value[f.name].items.length - 1
+    idx = store.facets[f.name].items.length - 1
   }
-  facets.value[f.name].items[idx].count++
+  store.facets[f.name].items[idx].count++
 }
 
 const removeFromFacet = (r: Row) => {
   r.facets.forEach(f => {
-    let idx = facets.value[f.name].items.findIndex(v => v.label === f.value)
-    facets.value[f.name].items[idx].count--
-    if (facets.value[f.name].items[idx].count <= 0) {
-      facets.value[f.name].items.splice(idx, 1)
+    let idx = store.facets[f.name].items.findIndex(v => v.label === f.value)
+    store.facets[f.name].items[idx].count--
+    if (store.facets[f.name].items[idx].count <= 0) {
+      store.facets[f.name].items.splice(idx, 1)
     }
   })
 }
@@ -177,7 +174,7 @@ const removeMessage = (count: number = 1) => {
 
 const clearAllRows = () => {
   store.rows = []
-  facets.value = {}
+  store.facets = {}
   storageLogs.removeAll()
 }
 
@@ -222,39 +219,6 @@ const loadConfig = (load?: Layout) => {
     })
   }
 }
-
-const displayRows = computed(() => {
-  const selectedFacets: Record<string, string[]> = {}
-  for (let i in facets.value) {
-    facets.value[i].items.forEach(el => {
-      if (el.selected) {
-        if (!selectedFacets[i]) {
-          selectedFacets[i] = []
-        }
-        selectedFacets[i].push(el.label)
-      }
-    })
-  }
-
-  return store.rows.filter(r => {
-    if (Object.keys(selectedFacets).length === 0) return true
-    let sel = { ...selectedFacets }
-    let cnt = Object.keys(sel).length
-
-    r.facets.forEach(f => {
-      if (sel[f.name] && sel[f.name].includes(f.value)) {
-        cnt--
-      }
-    })
-    return cnt === 0
-  }).filter(r => {
-    if (searchbar.value.length < 3) {
-      return true
-    }
-
-    return (r.msg.content || "").search(new RegExp(searchbar.value, 'i')) >= 0
-  })
-})
 
 const loadColumnsFromLayout = () => {
   columns.value = store.layout.columns.filter(col => !col.hidden)
@@ -302,7 +266,7 @@ const settingsUpdate = (settings: Settings) => {
 
 const render = () => {
   store.rows = []
-  facets.value = {}
+  store.facets = {}
   loadColumnsFromLayout()
   loadStorage()
 }
@@ -491,7 +455,7 @@ const updateSampleLine = () => {
   <Modal @close="store.modalShow = ''" v-if="store.modalShow">
     <AuthPrompt v-if="store.modalShow == 'auth'" @success="postAuth" />
     <Import v-if="store.modalShow == 'import'" :layout="(store.layout as Layout)" @layout-loaded="layoutLoaded" />
-    <ExportLogs v-if="store.modalShow == 'export-logs'" :rows="store.rows" :visible-rows="displayRows"
+    <ExportLogs v-if="store.modalShow == 'export-logs'" :rows="store.rows" :visible-rows="store.displayRows"
       :layout="(store.layout as Layout)" />
   </Modal>
   <Confirm />
@@ -513,7 +477,7 @@ const updateSampleLine = () => {
         </div>
       </div>
       <div class="right">
-        <input type="text" class="searchbar" v-model="searchbar" placeholder="Search logs..." />
+        <input type="text" class="searchbar" v-model="store.searchbar" placeholder="Search logs..." />
       </div>
       <div class="end">
         <button @click="clearAll">Clear all logs</button>
@@ -524,12 +488,12 @@ const updateSampleLine = () => {
     <div class="layout" @mouseup="endDragging">
       <div class="left-col" :style="{ width: store.layout.settings.leftColWidth + 'px' }">
         <div class="counter">
-          <span>Showing {{ displayRows.length }} out of {{ store.rows.length }} logs</span>
+          <span>Showing {{ store.displayRows.length }} out of {{ store.rows.length }} logs</span>
           <br />
           <button class="btn-sm" style="margin-top:4px" @click="useMainStore().modalShow = 'export-logs'">Export
             messages</button>
         </div>
-        <FacetComponent :facets="facets" />
+        <FacetComponent :facets="store.facets" />
       </div>
       <div class="mid-col" @mousedown="startDragging"></div>
       <div class="right-col" ref="table">
@@ -562,8 +526,8 @@ const updateSampleLine = () => {
                   &nbsp;</div>
               </th>
             </tr>
-            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row, k in displayRows"
-              @click="store.openLogDrawer(k)" :style="(row.msg.style as StyleValue || {})">
+            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row in store.displayRows"
+              @click="store.openLogDrawer(row)" :style="(row.msg.style as StyleValue || {})">
               <td class="cell" v-for="_, k2 in columns" :style="row.cells[k2].style as StyleValue || {}">
                 <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
               </td>

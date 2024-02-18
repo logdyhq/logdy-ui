@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { storageApp, storageLogs } from "./storage";
-import { Row } from "./types";
+import { FacetValues, Row } from "./types";
 import { Layout } from "./config";
 
 export interface Notification {
@@ -38,6 +38,8 @@ export const useMainStore = defineStore("main", () => {
     const password = ref<string>("")
     const stickedToBottom = ref<boolean>(false)
     const rows = ref<Row[]>([])
+    const facets = ref<FacetValues>({})
+    const searchbar = ref<string>("")
 
     const initSettings = ref<InitSettings>()
 
@@ -79,17 +81,21 @@ export const useMainStore = defineStore("main", () => {
         confirmShow.value = false
     }
 
-    const openLogDrawer = (k: number) => {
+    const openLogDrawer = (row: Row, delta: number = 0) => {
+        closeLogDrawer()
 
-        if (!rows.value[k]) {
-            return
+        if (delta !== 0) {
+            for (let i = 0; i <= displayRows.value.length; i++) {
+                if (displayRows.value[i].id !== row.id) {
+                    continue
+                }
+                row = displayRows.value[i + delta]
+                break
+            }
         }
 
-        closeLogDrawer()
-        let row = rows.value[k]
         row.open = true;
         drawer.value.row = row;
-        drawer.value.idx = k
         storageLogs.update(row.id, { id: row.id, message: row.msg, opened: true })
     }
 
@@ -121,6 +127,39 @@ export const useMainStore = defineStore("main", () => {
         anotherTab.value = true
     });
 
+    const displayRows = computed(() => {
+        const selectedFacets: Record<string, string[]> = {}
+        for (let i in facets.value) {
+            facets.value[i].items.forEach(el => {
+                if (el.selected) {
+                    if (!selectedFacets[i]) {
+                        selectedFacets[i] = []
+                    }
+                    selectedFacets[i].push(el.label)
+                }
+            })
+        }
+
+        return rows.value.filter((r, k) => {
+            if (Object.keys(selectedFacets).length === 0) return true
+            let sel = { ...selectedFacets }
+            let cnt = Object.keys(sel).length
+
+            r.facets.forEach(f => {
+                if (sel[f.name] && sel[f.name].includes(f.value)) {
+                    cnt--
+                }
+            })
+            return cnt === 0
+        }).filter(r => {
+            if (searchbar.value.length < 3) {
+                return true
+            }
+
+            return (r.msg.content || "").search(new RegExp(searchbar.value, 'i')) >= 0
+        })
+    })
+
     return {
         confirm,
         confirmShow,
@@ -147,6 +186,10 @@ export const useMainStore = defineStore("main", () => {
 
         layout,
 
-        rows
+        rows,
+        displayRows,
+
+        facets,
+        searchbar
     };
 });

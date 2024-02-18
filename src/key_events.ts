@@ -12,13 +12,13 @@ export const initKeyEventListeners = () => {
 
       if (event.code === 'ArrowUp') {
         event.preventDefault()
-        store.openLogDrawer(store.drawer.idx! - 1)
+        store.openLogDrawer(store.drawer.row, -1)
         return
       }
 
       if (event.code === 'ArrowDown') {
         event.preventDefault()
-        store.openLogDrawer(store.drawer.idx! + 1)
+        store.openLogDrawer(store.drawer.row, 1)
         return
       }
     }
