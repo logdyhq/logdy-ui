@@ -1,3 +1,4 @@
+import { Layout } from "./config";
 import { StoredMessage } from "./types";
 
 const APP_PREFIX = 'logdy'
@@ -114,3 +115,5 @@ export const storageApp = new Storage<{
 }>('app')
 
 export const storageLogs = new Storage<StoredMessage>('logs')
+
+export const storageLayout = new Storage<Layout>('layout')

@@ -1,6 +1,8 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { storageApp } from "./storage";
+import { Row } from "./types";
+import { Layout } from "./config";
 
 export interface Notification {
     id?: string;
@@ -36,6 +38,12 @@ export const useMainStore = defineStore("main", () => {
     const password = ref<string>("")
 
     const initSettings = ref<InitSettings>()
+
+    const drawer = ref<{
+        row?: Row
+    }>({})
+
+    const layout = ref<Layout>(new Layout('main', { leftColWidth: 300, maxMessages: 1000, middlewares: [] }))
 
     let confirmFn: (() => void) | null = null;
 
@@ -103,6 +111,9 @@ export const useMainStore = defineStore("main", () => {
         modalShow,
 
         setPassword,
-        getPassword
+        getPassword,
+
+        drawer,
+        layout
     };
 });

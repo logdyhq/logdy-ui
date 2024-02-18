@@ -2,7 +2,7 @@
 import { StyleValue, computed, onMounted, ref, watch } from 'vue';
 import { Row, FacetValues, Facet, Message, CellHandler, Column, Settings, Middleware } from "./types"
 import { Layout } from "./config"
-import { Storage, storageLogs } from "./storage"
+import { storageLayout, storageLogs } from "./storage"
 import Drawer from "./components/Drawer.vue"
 import SettingsDrawer from "./components/SettingsDrawer.vue"
 import FacetComponent from "./components/Facet.vue"
@@ -15,17 +15,17 @@ import Import from "./components/Import.vue"
 import HideColumnIcon from "./components/HideColumnIcon.vue"
 import ExportLogs from "./components/ExportLogs.vue"
 import { useMainStore, InitSettings } from './store';
+import { startDragging, endDragging, startColumnDragging } from './dragging';
 import * as demo from "./demo";
 import loadAnalytics from './analytics';
+import "./app.scss"
 
 const store = useMainStore()
 
 const rows = ref<Row[]>([])
 const facets = ref<FacetValues>({})
 const table = ref<HTMLElement>()
-const drawer = ref<{
-  row?: Row
-}>({})
+
 const searchbar = ref<string>("")
 const settingsDrawer = ref<boolean>(false)
 const stickedToBottom = ref<boolean>(false)
@@ -33,9 +33,6 @@ const columns = ref<Column[]>([])
 const sampleLineIndex = ref<number>(0)
 
 storageLogs.startClearingUnknowns()
-
-const storageLayout = new Storage<Layout>('layout')
-const layout = ref<Layout>(new Layout('main', { leftColWidth: 300, maxMessages: 1000, middlewares: [] }))
 
 const addToFacet = (f: Facet) => {
   if (!facets.value[f.name]) {
@@ -99,7 +96,7 @@ const addMessages = (msgs: Message[]) => {
   let toAdd: Row[] = []
   msgs.forEach(m => {
 
-    let cells = layout.value.columns.filter(c => !c.hidden).map((l): CellHandler => {
+    let cells = store.layout.columns.filter(c => !c.hidden).map((l): CellHandler => {
       try {
         let h = l.handler!(m)
         if (l.faceted) {
@@ -116,7 +113,7 @@ const addMessages = (msgs: Message[]) => {
         return { text: "error" }
       }
     })
-    let fields = layout.value.columns.filter(c => c.hidden).map((l): CellHandler => {
+    let fields = store.layout.columns.filter(c => c.hidden).map((l): CellHandler => {
       try {
         let h = l.handler!(m)
         if (l.faceted) {
@@ -146,9 +143,9 @@ const addMessages = (msgs: Message[]) => {
   })
 
 
-  if (rows.value.length >= layout.value.settings.maxMessages) {
-    if (rows.value.length > layout.value.settings.maxMessages) {
-      removeMessage(rows.value.length - layout.value.settings.maxMessages)
+  if (rows.value.length >= store.layout.settings.maxMessages) {
+    if (rows.value.length > store.layout.settings.maxMessages) {
+      removeMessage(rows.value.length - store.layout.settings.maxMessages)
     }
     removeMessage(msgs.length)
   }
@@ -194,7 +191,7 @@ const loadStorage = () => {
   tryAddMessage(msgs.map(sm => {
     if (sm.opened) openIds[sm.id!] = 1
     return sm.message
-  }), layout.value.settings)
+  }), store.layout.settings)
 
   msgs.forEach((msg, k) => {
     if (!openIds[rows.value[k].id!]) {
@@ -214,9 +211,9 @@ const loadConfig = (load?: Layout) => {
   }
 
   if (layouts[0]) {
-    layout.value.loadFromObj(layouts[0])
+    store.layout.loadFromObj(layouts[0])
   } else {
-    layout.value.add({
+    store.layout.add({
       id: "",
       name: "raw",
       handlerTsCode: `(line: Message): CellHandler => {
@@ -260,7 +257,7 @@ const displayRows = computed(() => {
 })
 
 const loadColumnsFromLayout = () => {
-  columns.value = layout.value.columns.filter(col => !col.hidden)
+  columns.value = store.layout.columns.filter(col => !col.hidden)
 }
 
 const addRawColumn = () => {
@@ -274,75 +271,32 @@ const addRawColumn = () => {
   })
 }
 
-const startDragging = () => {
-  document.getElementById("app")?.classList.add('noselect')
-  document.addEventListener('mousemove', handleDragging)
-}
-
-const startColumnDragging = (colId: string) => {
-  document.getElementById("app")?.classList.add('noselect')
-  const signal = new AbortController()
-  document.addEventListener('mousemove', (e: MouseEvent) => {
-    handleColumnDragging(colId, e)
-  }, { signal: signal.signal })
-
-  document.addEventListener('mouseup', () => {
-    signal.abort()
-
-    storageLayout.update('main', layout.value as Layout)
-  }, { once: true })
-}
-
-const endDragging = () => {
-  document.getElementById("app")?.classList.remove('noselect')
-  document.removeEventListener('mousemove', handleDragging)
-
-  storageLayout.update('main', layout.value as Layout)
-}
-
-const handleColumnDragging = (colId: string, e: MouseEvent) => {
-  let col = layout.value.getColumn(colId)
-  if (!col.width) {
-    col.width = 150
-  }
-  col.width += e.movementX
-  if (col.width <= 40) {
-    col.width = 40
-    return
-  }
-  layout.value.update(col)
-}
-
-const handleDragging = (e: MouseEvent) => {
-  layout.value.settings.leftColWidth += (e.movementX)
-}
-
 const columnEdited = (col: Column) => {
   if (col.id === 'new') {
-    layout.value.add(col)
+    store.layout.add(col)
   } else {
-    layout.value.update(col)
+    store.layout.update(col)
   }
-  storageLayout.update('main', layout.value as Layout)
+  storageLayout.update('main', store.layout as Layout)
   render()
 }
 
 const layoutLoaded = (lt: Layout) => {
-  layout.value = lt
-  storageLayout.update('main', layout.value as Layout)
+  store.layout = lt
+  storageLayout.update('main', store.layout as Layout)
   render()
 }
 
 const columnRemoved = (colId: string) => {
-  layout.value.removeColumn(colId)
-  storageLayout.update('main', layout.value as Layout)
+  store.layout.removeColumn(colId)
+  storageLayout.update('main', store.layout as Layout)
   render()
 }
 
 const settingsUpdate = (settings: Settings) => {
-  layout.value.settings = settings
-  layout.value.processMiddlewareHandlers()
-  storageLayout.update('main', layout.value as Layout)
+  store.layout.settings = settings
+  store.layout.processMiddlewareHandlers()
+  storageLayout.update('main', store.layout as Layout)
   render()
 }
 
@@ -385,7 +339,7 @@ const connectToWs = () => {
 
     switch (m.message_type) {
       case "log_bulk":
-        tryAddMessage(m.messages, layout.value.settings);
+        tryAddMessage(m.messages, store.layout.settings);
         (m.messages as Message[]).forEach(msg => {
           storageLogs.add({ id: msg.id, message: msg }, msg.id)
         })
@@ -412,8 +366,8 @@ const loadDemoMode = () => {
 }
 
 const renderDemoMode = () => {
-  layout.value = demo.getLayout(store.demoContent === 'json')
-  layout.value.processMiddlewareHandlers()
+  store.layout = demo.getLayout(store.demoContent === 'json')
+  store.layout.processMiddlewareHandlers()
   clearAllRows()
   render()
 }
@@ -444,7 +398,7 @@ const addDemoData = (count: number = 1) => {
       json_content: isJson ? data : null,
       origin,
       ts: new Date().getTime(),
-    }], layout.value.settings)
+    }], store.layout.settings)
   }
 }
 
@@ -473,7 +427,7 @@ onMounted(async () => {
 
   document.addEventListener("keyup", (event: KeyboardEvent) => {
     if (event.code === 'Escape') {
-      drawer.value.row = undefined
+      store.drawer.row = undefined
     }
   });
 
@@ -515,7 +469,7 @@ const initWs = async () => {
 }
 
 const reorderColumns = (colId: string, diff: number) => {
-  layout.value.move(colId, diff)
+  store.layout.move(colId, diff)
   render()
 }
 
@@ -539,17 +493,17 @@ const updateSampleLine = () => {
 const openLogDrawer = (row: Row) => {
   closeLogDrawer()
   row.open = true;
-  drawer.value.row = row;
+  store.drawer.row = row;
   storageLogs.update(row.id, { id: row.id, message: row.msg, opened: true })
 }
 
 const closeLogDrawer = () => {
-  if (!drawer.value.row) {
+  if (!store.drawer.row) {
     return
   }
-  drawer.value.row.open = false
-  drawer.value.row.opened = true;
-  drawer.value.row = undefined
+  store.drawer.row.open = false
+  store.drawer.row.opened = true;
+  store.drawer.row = undefined
 }
 
 </script>
@@ -557,16 +511,16 @@ const closeLogDrawer = () => {
 <template>
   <Modal @close="store.modalShow = ''" v-if="store.modalShow">
     <AuthPrompt v-if="store.modalShow == 'auth'" @success="postAuth" />
-    <Import v-if="store.modalShow == 'import'" :layout="(layout as Layout)" @layout-loaded="layoutLoaded" />
+    <Import v-if="store.modalShow == 'import'" :layout="(store.layout as Layout)" @layout-loaded="layoutLoaded" />
     <ExportLogs v-if="store.modalShow == 'export-logs'" :rows="rows" :visible-rows="displayRows"
-      :layout="(layout as Layout)" />
+      :layout="(store.layout as Layout)" />
   </Modal>
   <Confirm />
 
-  <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(layout as Layout)" @edit="columnEdited"
-    @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
+  <SettingsDrawer v-if="settingsDrawer" @close="settingsDrawer = false" :layout="(store.layout as Layout)"
+    @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
     @update-sample-line="updateSampleLine" :sampleLine="sampleLine" />
-  <Drawer :row="drawer.row" :layout="(layout as Layout)" @close="closeLogDrawer" />
+  <Drawer :row="store.drawer.row" :layout="(store.layout as Layout)" @close="closeLogDrawer" />
   <DemoBar v-if="store.demoMode" @start="store.demoStatus = 'started'" @stop="store.demoStatus = 'stopped'"
     @mode="changeDemoMode" @add="addDemoData(100)" />
   <div :class="{ 'demo': store.demoMode }">
@@ -589,7 +543,7 @@ const closeLogDrawer = () => {
       </div>
     </div>
     <div class="layout" @mouseup="endDragging">
-      <div class="left-col" :style="{ width: layout.settings.leftColWidth + 'px' }">
+      <div class="left-col" :style="{ width: store.layout.settings.leftColWidth + 'px' }">
         <div class="counter">
           <span>Showing {{ displayRows.length }} out of {{ rows.length }} logs</span>
           <br />
@@ -642,197 +596,4 @@ const closeLogDrawer = () => {
   </div>
 </template>
 
-<style scoped lang="scss">
-.top-bar {
-  height: 50px;
-  display: flex;
-  align-items: center;
-  flex-direction: row;
-  padding: 8px;
-
-
-  &div {
-    flex: 1 1 auto;
-  }
-
-  .left {
-    display: flex;
-    align-items: center;
-
-    .logo img {
-      height: 40px;
-    }
-
-    .docs {
-      margin-left: 10px;
-      font-size: 12px;
-      border: 1px solid var(--hl-bg);
-      padding: 4px 8px;
-      border-radius: 6px;
-    }
-
-    margin-left: 20px;
-    margin-right: 20px;
-  }
-
-  .right {
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-
-    .searchbar {
-      font-family: 'Roboto mono', sans-serif;
-      font-size: 12px;
-      padding: 5px;
-      width: 100%;
-      -webkit-box-sizing: border-box;
-      -moz-box-sizing: border-box;
-      -o-box-sizing: border-box;
-      -ms-box-sizing: border-box;
-      box-sizing: border-box;
-    }
-  }
-
-  .end {
-    display: flex;
-    align-items: center;
-    margin: 0 0px 0 10px;
-  }
-
-}
-
-
-.layout {
-  display: flex;
-  height: calc(100vh - 66px);
-  overflow: hidden;
-
-  .mid-col {
-    background: white;
-    width: 4px;
-    opacity: 0.2;
-    cursor: ew-resize;
-  }
-
-  .left-col {
-
-    overflow: auto;
-    overflow-x: hidden;
-    min-width: 150px;
-    border-right: 1px solid var(--hl-bg);
-    padding-right: 5px;
-
-    .counter {
-      text-align: center;
-      padding-bottom: 10px;
-    }
-
-  }
-
-  .right-col {
-    padding-left: 5px;
-    overflow: scroll;
-    // overflow-x: hidden;
-    width: 100%;
-    height: calc(100%);
-
-
-    .clickable {
-      text-decoration: underline;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .clickable:hover {
-      text-decoration: none;
-    }
-
-    .stick {
-      position: fixed;
-      right: 15px;
-      bottom: 10px;
-      font-size: 11px;
-
-      &.sticked {
-        border: 1px solid #646cff;
-      }
-    }
-
-    .table {
-      font-family: 'Roboto mono', sans-serif;
-      font-size: 12px;
-      border: none;
-      border-collapse: separate;
-      border-spacing: 0;
-
-      .header-border {
-        height: 100%;
-        display: inline;
-        width: 3px;
-        cursor: ew-resize;
-        background: rgba(0, 0, 0, .25);
-        float: right;
-      }
-
-      td,
-      th {
-        padding: 1px 2px;
-
-      }
-
-      .column-name {
-        span {
-          pointer-events: none;
-          user-select: none;
-        }
-
-        &:hover .hide-icon {
-          visibility: visible !important;
-        }
-      }
-
-      th {
-        position: sticky;
-        top: 0;
-        background-color: var(--hl-bg);
-        padding: 2px 0;
-      }
-
-      td div {
-        text-overflow: ellipsis;
-        overflow: hidden;
-        white-space: nowrap;
-        word-wrap: break-word;
-        word-break: break-all;
-      }
-
-      tr {
-        cursor: pointer;
-      }
-
-
-      tr.row.opened {
-        background-color: var(--hl-bg);
-        opacity: 0.8;
-      }
-
-      tr.row:hover {
-        background-color: var(--hl-bg) !important;
-        opacity: 1;
-      }
-
-      tr.row.open {
-        font-weight: 800;
-        background-color: var(--hl-bg3) !important;
-      }
-    }
-  }
-}
-
-.btn-sm {
-  padding: 4px 6px;
-  margin-right: 4px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-</style>
+<style scoped lang="scss"></style>
