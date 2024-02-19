@@ -6,7 +6,7 @@ export const initKeyEventListeners = () => {
   document.addEventListener("keydown", (event: KeyboardEvent) => {
     if (store.drawer.row) {
       if (event.code === 'Escape') {
-        store.drawer.row = undefined
+        store.closeLogDrawer()
         return
       }
 
