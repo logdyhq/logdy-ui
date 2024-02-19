@@ -159,7 +159,7 @@ export const useMainStore = defineStore("main", () => {
 
         let filters = useFilterStore().enabledFilters
         console.log(filters)
-        return rows.value.filter((r, k) => {
+        return rows.value.filter((r) => {
             if (filters.length > 0) {
                 if (filters.includes('starred') && !r.starred) return false
                 if (filters.includes('read') && !r.opened) return false
