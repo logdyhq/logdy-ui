@@ -39,6 +39,7 @@ export const useMainStore = defineStore("main", () => {
     const password = ref<string>("")
     const stickedToBottom = ref<boolean>(false)
     const rows = ref<Row[]>([])
+    const rowsIds: Record<string, boolean> = {}
     const facets = ref<FacetValues>({})
     const searchbar = ref<string>("")
 
@@ -158,7 +159,6 @@ export const useMainStore = defineStore("main", () => {
         }
 
         let filters = useFilterStore().enabledFilters
-        console.log(filters)
         return rows.value.filter((r) => {
             if (filters.length > 0) {
                 if (filters.includes('starred') && !r.starred) return false
@@ -211,6 +211,7 @@ export const useMainStore = defineStore("main", () => {
         layout,
 
         rows,
+        rowsIds,
         displayRows,
 
         facets,

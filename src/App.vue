@@ -75,21 +75,51 @@ const processMiddlewares = (msg: Message, middlewares: Middleware[]): Message | 
   return msg
 }
 
-const tryAddMessage = (msgs: Message[], settings: Settings) => {
+const tryAddMessage = (msgs: Message[], settings: Settings): Message[] => {
   try {
     let mm = msgs.map(m => processMiddlewares(m, settings.middlewares)).filter(m => m) as Message[]
     if (msgs) {
-      addMessages(mm)
+      return addMessages(mm)
     }
   } catch (e) {
     // todo: messages that cannot be processed should land in DLQ or some kind of buffer
     console.error("Could not process message", e)
+    return []
   }
+
+  return []
 }
 
-const addMessages = (msgs: Message[]) => {
+const addMessages = (msgs: Message[]): Message[] => {
+
+  //filter rows that are already present
+  msgs = msgs.filter(msg => {
+    if (!store.rowsIds[msg.id]) {
+      store.rowsIds[msg.id] = true
+      return true
+    }
+    return false
+  })
+
+  let spaceTaken = store.rows.length
+  let spaceTotal = store.layout.settings.maxMessages
+  let spaceAvail = spaceTotal - spaceTaken // space left
+  let spaceNeeded = msgs.length
+  // is there a space to fit all items?
+  // if not, how much space is needed?
+  if (spaceNeeded > spaceAvail) {
+    // if space needed > msgs length, then cut msgs and clear space fully
+    if (spaceNeeded > spaceTotal) {
+      msgs = msgs.splice(msgs.length - spaceTotal)
+      removeMessage(spaceTotal)
+    } else {
+      // if space needed <= msgs length, then free space up to needed point
+      removeMessage(spaceNeeded - spaceAvail)
+    }
+  }
+
   if (msgs.length === 0) {
-    return
+    return []
   }
 
   let toAdd: Row[] = []
@@ -140,12 +170,6 @@ const addMessages = (msgs: Message[]) => {
     })
   })
 
-  if (store.rows.length >= store.layout.settings.maxMessages) {
-    if (store.rows.length > store.layout.settings.maxMessages) {
-      removeMessage(store.rows.length - store.layout.settings.maxMessages)
-    }
-    removeMessage(msgs.length)
-  }
   store.rows.push(...toAdd)
 
   if ((toAdd[0] as any).orderKey) {
@@ -157,24 +181,42 @@ const addMessages = (msgs: Message[]) => {
       stickToBottom()
     }
   }, 10)
+
+  return msgs
 }
 
 const shouldStickToBottom = () => {
   return table.value && (table.value.scrollTop + table.value.offsetHeight + 20) >= table.value.scrollHeight
 }
 
-const removeMessage = (count: number = 1) => {
+const removeMessage = (count: number = 1): string[] => {
+  let ids = []
   for (let i = 0; i < count; i++) {
+    if (!store.rows[i]) {
+      continue
+    }
+    delete store.rowsIds[store.rows[i].id]
+    if (store.rows[i].opened) {
+      storeFilter.changeFilter('read', -1)
+    } else {
+      storeFilter.changeFilter('unread', -1)
+    }
+    store.rows[i].starred && storeFilter.changeFilter('starred', -1)
+    ids.push(store.rows[i].id)
     removeFromFacet(store.rows[i])
     storageLogs.removeFirst()
   }
   storageLogs.clearUnknown()
   store.rows.splice(0, count)
+
+  return ids
 }
 
 const clearAllRows = () => {
   store.rows = []
   store.facets = {}
+  store.rowsIds = {}
+  storeFilter.reset()
   storageLogs.removeAll()
 }
 
@@ -308,9 +350,9 @@ const connectToWs = () => {
 
     switch (m.message_type) {
       case "log_bulk":
-        tryAddMessage(m.messages, store.layout.settings);
-        storeFilter.changeFilter('unread', (m.messages as Message[]).length);
-        (m.messages as Message[]).forEach(msg => {
+        let msgs = tryAddMessage(m.messages, store.layout.settings);
+        storeFilter.changeFilter('unread', msgs.length);
+        msgs.forEach(msg => {
           storageLogs.add({ id: msg.id, message: msg }, msg.id)
         })
         break
