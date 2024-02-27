@@ -22,6 +22,15 @@ export const initKeyEventListeners = () => {
         return
       }
     }
+    if (event.code === 'Space') {
+      event.preventDefault()
+      if (store.receiveStatus === 'paused') {
+        store.changeReceiveStatus('following')
+      } else {
+        store.changeReceiveStatus('paused')
+      }
+      return
+    }
 
   });
 

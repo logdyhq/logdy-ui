@@ -198,7 +198,6 @@ const shouldStickToBottom = () => {
 }
 
 const removeMessage = (count: number = 1): string[] => {
-  console.log('removing messages', count)
   let ids = []
   for (let i = 0; i < count; i++) {
     if (!store.rows[i]) {
@@ -576,11 +575,11 @@ const updateSampleLine = () => {
             <Play width="19" height="19" />
           </button>
           <button :disabled="store.receiveStatus.includes('following')" @click="store.changeReceiveStatus('following')"
-            class="ctrl-btn" v-tooltip="'Resume incoming messages, starting with the latest'">
+            class="ctrl-btn" v-tooltip="'Resume incoming messages, starting with the latest (space)'">
             <PlayNext width="19" height="19" />
           </button>
           <button :disabled="store.receiveStatus === 'paused'" @click="store.changeReceiveStatus('paused')"
-            class="ctrl-btn" v-tooltip="'Pause incoming messages'">
+            class="ctrl-btn" v-tooltip="'Pause incoming messages (space)'">
             <Pause width="19" height="19" />
           </button>
           <button @click="clearAll" class="ctrl-btn" v-tooltip="'Clear all messages'">
