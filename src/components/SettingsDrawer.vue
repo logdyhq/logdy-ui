@@ -356,7 +356,7 @@ const addMiddleware = () => {
                 <h2>Settings
                     <button class="btn-sm" @click="useMainStore().modalShow = 'import'">Export / import</button>
                 </h2>
-                <div>Maximum number of log messages stored</div>
+                <div>Maximum number of log messages stored in the browser</div>
                 <div>
                     <input class="input" v-model="settings.maxMessages" type="number" />
                 </div>
