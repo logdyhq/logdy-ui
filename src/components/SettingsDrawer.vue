@@ -534,7 +534,7 @@ hr {
 
     pre {
         margin: 6px 0;
-        background: #1E1E1E;
+        background: var(--hl-bg2);
         padding: 10px;
         white-space: pre-wrap;
     }
@@ -555,4 +555,4 @@ hr {
         color: rgba(255, 255, 255, .5)
     }
 }
-</style>../moment.lib.ts
+</style>

@@ -25,10 +25,14 @@ import Close from './components/icon/Close.vue'
 import Pause from './components/icon/Pause.vue'
 import Play from './components/icon/Play.vue'
 import PlayNext from './components/icon/PlayNext.vue'
+import Sun from './components/icon/Sun.vue'
+import Moon from './components/icon/Moon.vue'
 import { client } from "./api"
+import { themeHandler } from "./theme"
 
 const store = useMainStore()
 const storeFilter = useFilterStore()
+
 
 const table = ref<HTMLElement>()
 const settingsDrawer = ref<boolean>(false)
@@ -466,6 +470,7 @@ const hideColumn = (col: Column) => {
 }
 
 onMounted(async () => {
+  themeHandler.loadTheme()
   if (store.demoMode) {
     loadDemoMode()
     loadAnalytics(true)
@@ -593,6 +598,10 @@ const updateSampleLine = () => {
           Following real-time out of {{ store.receiveCounters?.MessageCount }} entries</button>
         <StatusIndicator :status="store.status" />
         <button @click="settingsDrawer = true">Settings</button>
+        <button class="btn" style="padding:0.6em; margin-left:3px;" @click="themeHandler.toggleTheme()">
+          <Sun v-if="themeHandler.theme.value === 'dark'" />
+          <Moon v-if="themeHandler.theme.value === 'light'" />
+        </button>
       </div>
     </div>
     <div class="layout" @mouseup="endDragging">
