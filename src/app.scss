@@ -52,6 +52,22 @@
       display: flex;
       align-items: center;
       margin: 0 0px 0 10px;
+
+      .ctrls {
+        margin-right: 5px;
+        .ctrl-btn{
+          padding: 8px;
+          border-radius: 0;
+          &:first-child{
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+          }
+          &:last-child{
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+          }
+        }
+      }
     }
   
   }
@@ -216,5 +232,15 @@
     padding: 1px;
     border-radius: 2px;
   }
+
+  .v-popper--theme-tooltip .v-popper__inner {
+    background: #171717 !important;
+    padding: 5px  8px!important;
+    font-size: 13px;
+  }
+  .v-popper--theme-tooltip .v-popper__arrow-container {
+    visibility:hidden;
+  }
+  
 
   @import url(facet.scss);

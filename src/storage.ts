@@ -95,6 +95,13 @@ export class Storage<T extends { id?: string }> {
         localStorage.setItem(this.id(id), JSON.stringify(item))
     }
 
+    remove(id: string) {
+        let _id = this.id(id)
+        localStorage.removeItem(_id)
+        let idx = this.keys.indexOf(_id)
+        this.keys.splice(idx, 1)
+    }
+
     removeAll() {
         for (let i in this.keys) {
             // console.debug("removing all", this.keys[i])
@@ -104,6 +111,7 @@ export class Storage<T extends { id?: string }> {
     }
 
     removeFirst() {
+        localStorage.removeItem(this.keys[0])
         this.keys.splice(0, 1)
         // console.debug("removing first", id)
     }

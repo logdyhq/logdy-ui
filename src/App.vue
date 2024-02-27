@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { StyleValue, computed, onMounted, ref, watch } from 'vue';
-import { Row, Facet, Message, CellHandler, Column, Settings, Middleware } from "./types"
+import { Row, Facet, Message, CellHandler, Column, Settings, Middleware, StoredMessage } from "./types"
 import { Layout } from "./config"
 import { storageLayout, storageLogs } from "./storage"
 import Drawer from "./components/Drawer.vue"
@@ -21,6 +21,11 @@ import { startDragging, endDragging, startColumnDragging } from './dragging';
 import * as demo from "./demo";
 import { initKeyEventListeners } from "./key_events"
 import loadAnalytics from './analytics';
+import Close from './components/icon/Close.vue'
+import Pause from './components/icon/Pause.vue'
+import Play from './components/icon/Play.vue'
+import PlayNext from './components/icon/PlayNext.vue'
+import { client } from "./api"
 
 const store = useMainStore()
 const storeFilter = useFilterStore()
@@ -94,20 +99,22 @@ const addMessages = (msgs: Message[]): Message[] => {
 
   //filter rows that are already present
   msgs = msgs.filter(msg => {
+    // remove messags that are older than the first message in a table
+    if (store.rows.length > 0 && msg.ts < store.rows[0].msg.ts) {
+      return false
+    }
     if (!store.rowsIds[msg.id]) {
-      store.rowsIds[msg.id] = true
       return true
     }
     return false
   })
-
   let spaceTaken = store.rows.length
   let spaceTotal = store.layout.settings.maxMessages
   let spaceAvail = spaceTotal - spaceTaken // space left
   let spaceNeeded = msgs.length
   // is there a space to fit all items?
   // if not, how much space is needed?
-  if (spaceNeeded > spaceAvail) {
+  if (spaceNeeded > 0 && spaceNeeded > spaceAvail) {
     // if space needed > msgs length, then cut msgs and clear space fully
     if (spaceNeeded > spaceTotal) {
       msgs = msgs.splice(msgs.length - spaceTotal)
@@ -160,6 +167,7 @@ const addMessages = (msgs: Message[]): Message[] => {
       }
     })
 
+    store.rowsIds[m.id] = true
     toAdd.push({
       id: m.id,
       orderKey: m.order_key || 0,
@@ -190,6 +198,7 @@ const shouldStickToBottom = () => {
 }
 
 const removeMessage = (count: number = 1): string[] => {
+  console.log('removing messages', count)
   let ids = []
   for (let i = 0; i < count; i++) {
     if (!store.rows[i]) {
@@ -206,7 +215,6 @@ const removeMessage = (count: number = 1): string[] => {
     removeFromFacet(store.rows[i])
     storageLogs.removeFirst()
   }
-  storageLogs.clearUnknown()
   store.rows.splice(0, count)
 
   return ids
@@ -226,22 +234,35 @@ const clearAll = () => {
 
 const loadStorage = () => {
   let msgs = storageLogs.load()
-  let openIds: Record<string, number> = {}
   storeFilter.reset()
   tryAddMessage(msgs.map(sm => {
-    if (sm.opened) openIds[sm.id!] = 1
     return sm.message
   }), store.layout.settings)
 
-  msgs.forEach((msg, k) => {
-    msg.starred && storeFilter.changeFilter('starred', 1)
-    if (msg.opened) storeFilter.changeFilter('read', 1)
+  let msgId: Record<string, StoredMessage> = {}
+  msgs.forEach(m => {
+    msgId[m.message.id] = m
+  })
+
+  store.rows.forEach((r, k) => {
+    let stored = msgId[r.id]
+    if (!stored) {
+      console.error("whoops")
+      return
+    }
+
+    store.rows[k].starred = stored.starred
+    stored.starred && storeFilter.changeFilter('starred', 1)
+    if (stored.opened) storeFilter.changeFilter('read', 1)
     else storeFilter.changeFilter('unread', 1);
 
-    store.rows[k].starred = msg.starred
-    if (openIds[store.rows[k].id!]) {
-      store.rows[k].opened = msg.opened
-    }
+    store.rows[k].opened = stored.opened
+
+    delete msgId[r.id]
+  })
+
+  Object.keys(msgId).forEach(mi => {
+    storageLogs.remove(mi)
   })
 }
 
@@ -313,6 +334,7 @@ const settingsUpdate = (settings: Settings) => {
 
 const render = () => {
   store.rows = []
+  store.rowsIds = {}
   store.facets = {}
   loadColumnsFromLayout()
   loadStorage()
@@ -349,6 +371,22 @@ const connectToWs = () => {
     let m = JSON.parse(msg.data)
 
     switch (m.message_type) {
+      case "client_joined":
+        client.setAuthToken(m.client_id);
+        break
+      case "client_msg_status":
+        if (!store.receiveCounters) {
+          store.receiveCounters = {
+            MessageCount: 0,
+            MessagesToTail: 0,
+            LastDeliveredIdx: 0
+          }
+        }
+
+        store.receiveCounters.MessageCount = (m as any).stats.msg_count
+        store.receiveCounters.MessagesToTail = (m as any).client.count_to_tail
+        store.receiveCounters.LastDeliveredIdx = (m as any).client.last_delivered_id_idx
+        break
       case "log_bulk":
         let msgs = tryAddMessage(m.messages, store.layout.settings);
         storeFilter.changeFilter('unread', msgs.length);
@@ -531,7 +569,29 @@ const updateSampleLine = () => {
         <input type="text" class="searchbar" v-model="store.searchbar" placeholder="Search logs..." />
       </div>
       <div class="end">
-        <button @click="clearAll">Clear all logs</button>
+        <div class="ctrls">
+          <button :disabled="store.receiveStatus.includes('following')"
+            @click="store.changeReceiveStatus('following_cursor')" class="ctrl-btn"
+            v-tooltip="'Resume incoming messages where paused'">
+            <Play width="19" height="19" />
+          </button>
+          <button :disabled="store.receiveStatus.includes('following')" @click="store.changeReceiveStatus('following')"
+            class="ctrl-btn" v-tooltip="'Resume incoming messages, starting with the latest'">
+            <PlayNext width="19" height="19" />
+          </button>
+          <button :disabled="store.receiveStatus === 'paused'" @click="store.changeReceiveStatus('paused')"
+            class="ctrl-btn" v-tooltip="'Pause incoming messages'">
+            <Pause width="19" height="19" />
+          </button>
+          <button @click="clearAll" class="ctrl-btn" v-tooltip="'Clear all messages'">
+            <Close width="19" height="19" />
+          </button>
+        </div>
+        <button v-if="store.receiveStatus == 'paused'">
+          Paused at entry #{{ store.receiveCounters.LastDeliveredIdx }} out of {{ store.receiveCounters.MessageCount
+          }} ({{ store.receiveCounters.MessageCount - store.receiveCounters.LastDeliveredIdx }} not seen)</button>
+        <button v-if="store.receiveStatus.includes('following')">
+          Following real-time out of {{ store.receiveCounters?.MessageCount }} entries</button>
         <StatusIndicator :status="store.status" />
         <button @click="settingsDrawer = true">Settings</button>
       </div>

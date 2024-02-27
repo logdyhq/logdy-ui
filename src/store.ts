@@ -4,6 +4,7 @@ import { storageApp, storageLogs } from "./storage";
 import { FacetValues, Row } from "./types";
 import { Layout } from "./config";
 import { useFilterStore } from "./stores/filter";
+import { client } from "./api";
 
 export interface Notification {
     id?: string;
@@ -21,6 +22,14 @@ export interface InitSettings {
     configStr: string;
 }
 
+type ReceiveStatus = "paused" | "following" | "following_cursor"
+
+interface ReceiveCounters {
+    MessageCount: number,
+    MessagesToTail: number,
+    LastDeliveredIdx: number
+}
+
 export const useMainStore = defineStore("main", () => {
 
     const demoMode = ref<boolean>(
@@ -34,6 +43,8 @@ export const useMainStore = defineStore("main", () => {
     const confirmShow = ref<boolean>(false);
 
     const status = ref<"connected" | "not connected">("not connected")
+    const receiveStatus = ref<ReceiveStatus>("paused")
+    const receiveCounters = ref<ReceiveCounters>({ LastDeliveredIdx: 0, MessageCount: 0, MessagesToTail: 0 })
     const anotherTab = ref<boolean>(false)
     const modalShow = ref<"" | "auth" | "import" | "export-logs">("")
     const password = ref<string>("")
@@ -145,6 +156,23 @@ export const useMainStore = defineStore("main", () => {
         anotherTab.value = true
     });
 
+    const changeReceiveStatus = async (status: ReceiveStatus) => {
+        switch (status) {
+            case 'following':
+                await client.resume()
+                receiveStatus.value = 'following';
+                break;
+            case 'following_cursor':
+                await client.resumeFromCursor()
+                receiveStatus.value = 'following_cursor';
+                break;
+            case 'paused':
+                await client.pause()
+                receiveStatus.value = 'paused';
+                break;
+        }
+    }
+
     const displayRows = computed(() => {
         const selectedFacets: Record<string, string[]> = {}
         for (let i in facets.value) {
@@ -194,6 +222,10 @@ export const useMainStore = defineStore("main", () => {
         demoStatus,
         demoContent,
         status,
+
+        receiveStatus,
+        receiveCounters,
+        changeReceiveStatus,
 
         initSettings,
         anotherTab,
