@@ -21,7 +21,6 @@ import * as demo from "./demo";
 import { initKeyEventListeners } from "./key_events"
 import loadAnalytics from './analytics';
 import { client } from "./api"
-import { themeHandler } from "./theme"
 import TopBar from "./components/TopBar.vue"
 
 const store = useMainStore()
@@ -451,7 +450,7 @@ const hideColumn = (col: Column) => {
 }
 
 onMounted(async () => {
-  themeHandler.loadTheme()
+  // themeHandler.loadTheme()
   if (store.demoMode) {
     loadDemoMode()
     loadAnalytics(true)
