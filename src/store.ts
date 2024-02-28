@@ -53,6 +53,7 @@ export const useMainStore = defineStore("main", () => {
     const rowsIds: Record<string, boolean> = {}
     const facets = ref<FacetValues>({})
     const searchbar = ref<string>("")
+    const settingsDrawer = ref<boolean>(false)
 
     const initSettings = ref<InitSettings>()
 
@@ -173,6 +174,14 @@ export const useMainStore = defineStore("main", () => {
         }
     }
 
+    const clearAllRows = () => {
+        rows.value = []
+        facets.value = {}
+        Object.assign(rowsIds, {})
+        useFilterStore().reset()
+        storageLogs.removeAll()
+    }
+
     const displayRows = computed(() => {
         const selectedFacets: Record<string, string[]> = {}
         for (let i in facets.value) {
@@ -235,6 +244,10 @@ export const useMainStore = defineStore("main", () => {
         getPassword,
 
         stickedToBottom,
+
+        clearAllRows,
+
+        settingsDrawer,
 
         drawer,
         openLogDrawer,

@@ -60,7 +60,9 @@ body.light{
   }
 }
 
-
+button[disabled]{
+  opacity: 0.7;
+}
 
 a {
   font-weight: 500;
