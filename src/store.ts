@@ -5,6 +5,7 @@ import { FacetValues, Row } from "./types";
 import { Layout } from "./config";
 import { useFilterStore } from "./stores/filter";
 import { client } from "./api";
+import { formatThousands } from "./utils";
 
 export interface Notification {
     id?: string;
@@ -46,11 +47,11 @@ export const useMainStore = defineStore("main", () => {
     const receiveStatus = ref<ReceiveStatus>("paused")
     const receiveCounters = ref<ReceiveCounters>({ LastDeliveredIdx: 0, MessageCount: 0, MessagesToTail: 0 })
     const anotherTab = ref<boolean>(false)
-    const modalShow = ref<"" | "auth" | "import" | "export-logs">("")
+    const modalShow = ref<"" | "auth" | "import" | "export-logs" | "load-logs">("")
     const password = ref<string>("")
     const stickedToBottom = ref<boolean>(false)
     const rows = ref<Row[]>([])
-    const rowsIds: Record<string, boolean> = {}
+    const rowsIds = ref<Record<string, boolean>>({})
     const facets = ref<FacetValues>({})
     const searchbar = ref<string>("")
     const settingsDrawer = ref<boolean>(false)
@@ -157,6 +158,17 @@ export const useMainStore = defineStore("main", () => {
         anotherTab.value = true
     });
 
+    const statusStr = computed(() => {
+        if (receiveStatus.value === 'paused') {
+            return `Paused at entry #${formatThousands(receiveCounters.value.LastDeliveredIdx + 1)} out of ${formatThousands(receiveCounters.value.MessageCount)
+                } (${formatThousands(receiveCounters.value.MessageCount - receiveCounters.value.LastDeliveredIdx - 1)} not seen)`
+        }
+        if (receiveStatus.value.includes('following')) {
+            return `Following real-time out of ${formatThousands(receiveCounters?.value.MessageCount)} entries`
+        }
+        return '-'
+    })
+
     const changeReceiveStatus = async (status: ReceiveStatus) => {
         switch (status) {
             case 'following':
@@ -177,7 +189,7 @@ export const useMainStore = defineStore("main", () => {
     const clearAllRows = () => {
         rows.value = []
         facets.value = {}
-        Object.assign(rowsIds, {})
+        rowsIds.value = {}
         useFilterStore().reset()
         storageLogs.removeAll()
     }
@@ -231,6 +243,7 @@ export const useMainStore = defineStore("main", () => {
         demoStatus,
         demoContent,
         status,
+        statusStr,
 
         receiveStatus,
         receiveCounters,

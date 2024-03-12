@@ -46,6 +46,37 @@ class httpClient {
         }
     }
 
+    async sendPost(path: string, data?: object): Promise<{
+        status: number,
+        headers: Headers,
+        json?: Record<string, any>,
+        body?: string
+    }> {
+
+        let headers = {}
+        if (this.onRequestStart) {
+            headers = this.onRequestStart() || {}
+        }
+
+        let res = await fetch("/api/" + path, {
+            method: "POST",
+            body: data ? JSON.stringify(data) : null,
+            headers: {
+                "Content-Type": "application/json",
+                ...this.headers,
+                ...headers
+            },
+        })
+
+        this.onRequestEnd && this.onRequestEnd()
+        return {
+            status: res.status,
+            headers: res.headers,
+            json: res.headers.get('content-type') == 'application/json' ? await res.json() : {},
+            body: res.bodyUsed ? "" : await res.text()
+        }
+    }
+
     async resume() {
         await this.sendGet("client/set-status?status=following")
     }
@@ -60,6 +91,18 @@ class httpClient {
 
     async clientStatus() {
         return this.sendGet("client/check-status")
+    }
+
+    async peek(offset: number, offsetEnd: number) {
+        return this.sendPost("client/peek-log", {
+            idxs: [
+                offset, offsetEnd
+            ]
+        })
+    }
+
+    async load(offset: number, count: number) {
+        return this.sendGet(`client/load?start=${offset + 1}&count=${count}`)
     }
 
 }

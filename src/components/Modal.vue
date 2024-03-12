@@ -30,12 +30,15 @@ defineEmits<{
     position: fixed;
     display: flex;
     flex-direction: column;
-    top: 50px;
+    top: 40px;
     left: 50%;
     transform: translate(-50%, 0);
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
 
     width: 900px;
-    max-height: 800px;
+    max-height: calc(100% - 100px);
+    overflow-y: scroll;
     background: var(--hl-bg);
     z-index: 10000;
     padding: 20px;

@@ -12,6 +12,7 @@ import AuthPrompt from "./components/AuthPrompt.vue"
 import DemoBar from "./components/DemoBar.vue"
 import Confirm from "./components/ConfirmModal.vue"
 import Import from "./components/Import.vue"
+import LoadLogs from "./components/LoadLogs.vue"
 import HideColumnIcon from "./components/HideColumnIcon.vue"
 import ExportLogs from "./components/ExportLogs.vue"
 import { useMainStore, InitSettings } from './store';
@@ -92,7 +93,7 @@ const tryAddMessage = (msgs: Message[], settings: Settings): Message[] => {
 }
 
 const addMessages = (msgs: Message[]): Message[] => {
-
+  console.log(Object.keys(store.rowsIds).length)
   //filter rows that are already present
   msgs = msgs.filter(msg => {
     // remove messags that are older than the first message in a table
@@ -317,7 +318,7 @@ const settingsUpdate = (settings: Settings) => {
 
 const render = () => {
   store.rows = []
-  store.rowsIds = {}
+  Object.assign(store.rowsIds, {})
   store.facets = {}
   loadColumnsFromLayout()
   loadStorage()
@@ -530,6 +531,7 @@ const updateSampleLine = () => {
     <Import v-if="store.modalShow == 'import'" :layout="(store.layout as Layout)" @layout-loaded="layoutLoaded" />
     <ExportLogs v-if="store.modalShow == 'export-logs'" :rows="store.rows" :visible-rows="store.displayRows"
       :layout="(store.layout as Layout)" />
+    <LoadLogs v-if="store.modalShow == 'load-logs'" />
   </Modal>
   <Confirm />
 
