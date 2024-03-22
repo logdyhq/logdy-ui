@@ -83,15 +83,26 @@
       width: 4px;
       opacity: 0.2;
       cursor: ew-resize;
+
+      &.freeze {
+        width: 2px !important;
+        cursor: auto;
+        opacity: 0.1;
+      }
     }
   
     .left-col {
   
       overflow: auto;
       overflow-x: hidden;
-      min-width: 150px;
+      min-width: 180px;
       border-right: 1px solid var(--hl-bg);
       padding-right: 5px;
+
+      &.empty {
+        min-width: unset !important;
+        width: 20px !important;
+      }
   
       .counter {
         text-align: center;

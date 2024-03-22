@@ -13,6 +13,8 @@ import DemoBar from "./components/DemoBar.vue"
 import Confirm from "./components/ConfirmModal.vue"
 import Import from "./components/Import.vue"
 import LoadLogs from "./components/LoadLogs.vue"
+import DoubleLeft from "./components/icon/DoubleLeft.vue"
+import DoubleRight from "./components/icon/DoubleRight.vue"
 import HideColumnIcon from "./components/HideColumnIcon.vue"
 import ExportLogs from "./components/ExportLogs.vue"
 import { useMainStore, InitSettings } from './store';
@@ -33,7 +35,13 @@ const table = ref<HTMLElement>()
 const columns = ref<Column[]>([])
 const sampleLineIndex = ref<number>(0)
 
+const leftColHidden = ref<boolean>(false)
+
 storageLogs.startClearingUnknowns()
+
+const toggleLeftCol = () => {
+  leftColHidden.value = !leftColHidden.value
+}
 
 const addToFacet = (f: Facet) => {
   if (!store.facets[f.name]) {
@@ -560,17 +568,24 @@ const updateSampleLine = () => {
       </div>
     </div>
     <div class="layout" @mouseup="endDragging">
-      <div class="left-col" :style="{ width: store.layout.settings.leftColWidth + 'px' }">
-        <div class="counter">
-          <span>Showing {{ store.displayRows.length }} out of {{ store.rows.length }} logs</span>
-          <br />
-          <button class="btn-sm" style="margin-top:4px" @click="useMainStore().modalShow = 'export-logs'">Export
-            messages</button>
+      <div class="left-col" :style="{ width: store.layout.settings.leftColWidth + 'px' }" style="position: relative"
+        :class="{ empty: leftColHidden }">
+        <div style="position:absolute; right: 0; cursor: pointer;">
+          <DoubleLeft v-if="!leftColHidden" style="height: 25px; width: 25px;" @click="toggleLeftCol" />
+          <DoubleRight v-if="leftColHidden" style="height: 25px; width: 25px;" @click="toggleLeftCol" />
         </div>
-        <Filter />
-        <FacetComponent :facets="store.facets" />
+        <template v-if="!leftColHidden">
+          <div class="counter">
+            <span>{{ store.displayRows.length }} out of {{ store.rows.length }} logs</span>
+            <br />
+            <button class="btn-sm" style="margin-top:4px" @click="useMainStore().modalShow = 'export-logs'">Export
+              messages</button>
+          </div>
+          <Filter />
+          <FacetComponent :facets="store.facets" />
+        </template>
       </div>
-      <div class="mid-col" @mousedown="startDragging"></div>
+      <div class="mid-col" :class="{ freeze: leftColHidden }" @mousedown="startDragging"></div>
       <div class="right-col" ref="table">
         <div v-if="columns.length === 0" style="text-align: center; padding-top:100px; font-size: 20px;">
 
@@ -578,7 +593,8 @@ const updateSampleLine = () => {
               connected</strong></div>
 
           <template v-else>
-            No columns defined, open <span class="clickable" @click="store.settingsDrawer = true">Settings</span> and add
+            No columns defined, open <span class="clickable" @click="store.settingsDrawer = true">Settings</span> and
+            add
             columns<br />
             or <span class="clickable" @click="addRawColumn">add column with raw content now</span>.
           </template>
