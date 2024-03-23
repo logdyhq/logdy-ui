@@ -11,10 +11,13 @@ import Modal from "./components/Modal.vue"
 import AuthPrompt from "./components/AuthPrompt.vue"
 import DemoBar from "./components/DemoBar.vue"
 import Confirm from "./components/ConfirmModal.vue"
+import FeedbackModal from "./components/FeedbackModal.vue"
 import Import from "./components/Import.vue"
 import LoadLogs from "./components/LoadLogs.vue"
 import DoubleLeft from "./components/icon/DoubleLeft.vue"
 import DoubleRight from "./components/icon/DoubleRight.vue"
+import Flag from "./components/icon/Flag.vue"
+import ArrowRightUp from "./components/icon/ArrowRightUp.vue"
 import HideColumnIcon from "./components/HideColumnIcon.vue"
 import ExportLogs from "./components/ExportLogs.vue"
 import { useMainStore, InitSettings } from './store';
@@ -540,6 +543,7 @@ const updateSampleLine = () => {
     <ExportLogs v-if="store.modalShow == 'export-logs'" :rows="store.rows" :visible-rows="store.displayRows"
       :layout="(store.layout as Layout)" />
     <LoadLogs v-if="store.modalShow == 'load-logs'" />
+    <FeedbackModal v-if="store.modalShow == 'feedback'" />
   </Modal>
   <Confirm />
 
@@ -555,8 +559,13 @@ const updateSampleLine = () => {
         <div class="logo">
           <a href="https://logdy.dev" target="_blank"><img src="/logdy-transparent.png" /></a>
         </div>
-        <div class="docs">
-          <a href="https://logdy.dev/docs/quick-start">Open docs</a>
+        <div class="docs link-style">
+          <a href="https://logdy.dev/docs/quick-start" target="_blank">Docs
+          </a>
+          <ArrowRightUp style=""></ArrowRightUp>
+        </div>
+        <div class="docs link-style" @click="store.modalShow = 'feedback'" style="cursor:pointer">
+          Leave feedback <Flag></Flag>
         </div>
       </div>
       <div class="right">

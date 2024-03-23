@@ -47,7 +47,7 @@ export const useMainStore = defineStore("main", () => {
     const receiveStatus = ref<ReceiveStatus>("paused")
     const receiveCounters = ref<ReceiveCounters>({ LastDeliveredIdx: 0, MessageCount: 0, MessagesToTail: 0 })
     const anotherTab = ref<boolean>(false)
-    const modalShow = ref<"" | "auth" | "import" | "export-logs" | "load-logs">("")
+    const modalShow = ref<"" | "auth" | "import" | "export-logs" | "load-logs" | "feedback">("")
     const password = ref<string>("")
     const stickedToBottom = ref<boolean>(false)
     const rows = ref<Row[]>([])
