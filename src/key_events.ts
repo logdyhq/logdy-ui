@@ -22,7 +22,9 @@ export const initKeyEventListeners = () => {
         return
       }
     }
-    if (event.code === 'Space') {
+    if (!store.settingsDrawer
+      && !store.modalShow
+      && event.code === 'Space') {
       event.preventDefault()
       if (store.receiveStatus === 'paused') {
         store.changeReceiveStatus('following')
