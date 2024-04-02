@@ -34,6 +34,11 @@ export const useFilterStore = defineStore("filter", () => {
     const reset = () => {
         filters.value = { ...getFilter() }
     }
+    const resetToggles = () => {
+        for (let i in filterToggle.value) {
+            filterToggle.value[i] = false
+        }
+    }
 
     const enabledFilters = computed((): Filters[] => {
         let ret = Object.entries(filterToggle.value).filter(
@@ -48,6 +53,7 @@ export const useFilterStore = defineStore("filter", () => {
         enabledFilters,
 
         reset,
+        resetToggles,
         changeFilter,
         toggleFilter
     };

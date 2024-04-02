@@ -32,7 +32,6 @@ import TopBar from "./components/TopBar.vue"
 const store = useMainStore()
 const storeFilter = useFilterStore()
 
-
 const table = ref<HTMLElement>()
 
 const columns = ref<Column[]>([])
@@ -64,6 +63,11 @@ const addToFacet = (f: Facet) => {
     idx = store.facets[f.name].items.length - 1
   }
   store.facets[f.name].items[idx].count++
+}
+
+const resetAllFiltersAndFacets = () => {
+  storeFilter.resetToggles()
+  store.clearAllFacets()
 }
 
 const removeFromFacet = (r: Row) => {
@@ -603,6 +607,8 @@ const updateSampleLine = () => {
             <br />
             <button class="btn-sm" style="margin-top:4px" @click="useMainStore().modalShow = 'export-logs'">Export
               messages</button>
+            <button class="btn-sm" style="margin-top:4px" @click="resetAllFiltersAndFacets">Reset all
+              filters</button>
           </div>
           <Filter />
           <FacetComponent :facets="store.facets" />

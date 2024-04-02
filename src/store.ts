@@ -194,6 +194,15 @@ export const useMainStore = defineStore("main", () => {
         storageLogs.removeAll()
     }
 
+    const clearAllFacets = () => {
+        for (let i in facets.value) {
+            let f = facets.value[i]
+            for (let i2 in f.items) {
+                facets.value[f.name].items[i2].selected = false
+            }
+        }
+    }
+
     const displayRows = computed(() => {
         const selectedFacets: Record<string, string[]> = {}
         for (let i in facets.value) {
@@ -210,29 +219,31 @@ export const useMainStore = defineStore("main", () => {
         let filters = useFilterStore().enabledFilters
         let fileOriginFilter = filters.filter(f => f.startsWith('origin_file_')).length > 0
         let portOriginFilter = filters.filter(f => f.startsWith('origin_port_')).length > 0
+        let naOriginFilter = filters.filter(f => f.startsWith('origin_na')).length > 0
+        let originFilter = filters.filter(f => f.startsWith('origin_')).length > 0
         return rows.value.filter((r) => {
+            let ret = true
             if (filters.length > 0) {
                 if (filters.includes('starred') && !r.starred) return false
                 if (filters.includes('read') && !r.opened) return false
                 if (filters.includes('unread') && r.opened) return false
-                if (filters.includes('origin_na') && (r.msg.origin?.file || r.msg.origin?.port)) return false
 
-                if (fileOriginFilter) {
-                    if (r.msg.origin?.file) {
-                        if (!filters.includes('origin_file_' + r.msg.origin?.file)) return false
+                if (originFilter) {
+                    if (fileOriginFilter && r.msg.origin?.file && filters.includes('origin_file_' + r.msg.origin?.file)) {
+                        ret = true
+                    } else if (portOriginFilter && r.msg.origin?.port && filters.includes('origin_port_' + r.msg.origin?.port)) {
+                        ret = true
+                    } else if (naOriginFilter && (!r.msg.origin?.file && !r.msg.origin?.port) && filters.includes('origin_na')) {
+                        ret = true
                     } else {
-                        return false
-                    }
-                }
-
-                if (portOriginFilter) {
-                    if (r.msg.origin?.port) {
-                        if (!filters.includes('origin_port_' + r.msg.origin?.port)) return false
-                    } else {
-                        return false
+                        ret = false
                     }
                 }
             }
+            if (!ret) {
+                return ret
+            }
+
             if (Object.keys(selectedFacets).length === 0) return true
             let sel = { ...selectedFacets }
             let cnt = Object.keys(sel).length
@@ -278,6 +289,7 @@ export const useMainStore = defineStore("main", () => {
         stickedToBottom,
 
         clearAllRows,
+        clearAllFacets,
 
         settingsDrawer,
 
