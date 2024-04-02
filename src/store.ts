@@ -208,11 +208,30 @@ export const useMainStore = defineStore("main", () => {
         }
 
         let filters = useFilterStore().enabledFilters
+        let fileOriginFilter = filters.filter(f => f.startsWith('origin_file_')).length > 0
+        let portOriginFilter = filters.filter(f => f.startsWith('origin_port_')).length > 0
         return rows.value.filter((r) => {
             if (filters.length > 0) {
                 if (filters.includes('starred') && !r.starred) return false
                 if (filters.includes('read') && !r.opened) return false
                 if (filters.includes('unread') && r.opened) return false
+                if (filters.includes('origin_na') && (r.msg.origin?.file || r.msg.origin?.port)) return false
+
+                if (fileOriginFilter) {
+                    if (r.msg.origin?.file) {
+                        if (!filters.includes('origin_file_' + r.msg.origin?.file)) return false
+                    } else {
+                        return false
+                    }
+                }
+
+                if (portOriginFilter) {
+                    if (r.msg.origin?.port) {
+                        if (!filters.includes('origin_port_' + r.msg.origin?.port)) return false
+                    } else {
+                        return false
+                    }
+                }
             }
             if (Object.keys(selectedFacets).length === 0) return true
             let sel = { ...selectedFacets }

@@ -104,7 +104,6 @@ const tryAddMessage = (msgs: Message[], settings: Settings): Message[] => {
 }
 
 const addMessages = (msgs: Message[]): Message[] => {
-  console.log(Object.keys(store.rowsIds).length)
   //filter rows that are already present
   msgs = msgs.filter(msg => {
     // remove messags that are older than the first message in a table
@@ -251,6 +250,15 @@ const loadStorage = () => {
     if (stored.opened) storeFilter.changeFilter('read', 1)
     else storeFilter.changeFilter('unread', 1);
 
+    if (stored.message.origin?.file) {
+      storeFilter.changeFilter('origin_file_' + stored.message.origin.file, 1)
+    }
+    else if (stored.message.origin?.port) {
+      storeFilter.changeFilter('origin_port_' + stored.message.origin.port, 1)
+    } else {
+      storeFilter.changeFilter('origin_na', 1)
+    }
+
     store.rows[k].opened = stored.opened
 
     delete msgId[r.id]
@@ -387,6 +395,12 @@ const connectToWs = () => {
         storeFilter.changeFilter('unread', msgs.length);
         msgs.forEach(msg => {
           storageLogs.add({ id: msg.id, message: msg }, msg.id)
+          if (msg.origin?.file) {
+            storeFilter.changeFilter('origin_file_' + msg.origin.file, 1)
+          }
+          if (msg.origin?.port) {
+            storeFilter.changeFilter('origin_port_' + msg.origin.port, 1)
+          }
         })
         break
       default:

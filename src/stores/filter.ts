@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
-export type Filters = "read" | "starred" | "unread"
+export type Filters = "read" | "starred" | "unread" | string
 
 export const getFilter = (): Record<Filters, number> => {
     return {
@@ -21,6 +21,9 @@ export const useFilterStore = defineStore("filter", () => {
     const filters = ref<Record<Filters, number>>({ ...getFilter() })
 
     const changeFilter = (prop: Filters, delta: number) => {
+        if (!filters.value[prop]) {
+            filters.value[prop] = 0
+        }
         filters.value[prop] += delta
     }
 
@@ -32,12 +35,11 @@ export const useFilterStore = defineStore("filter", () => {
         filters.value = { ...getFilter() }
     }
 
-    const enabledFilters = computed(() => {
-        let filters: Filters[] = []
-        filterToggle.value.read && filters.push('read')
-        filterToggle.value.unread && filters.push('unread')
-        filterToggle.value.starred && filters.push('starred')
-        return filters
+    const enabledFilters = computed((): Filters[] => {
+        let ret = Object.entries(filterToggle.value).filter(
+            ([_, value]) => value
+        ).map(v => v[0])
+        return ret
     })
 
     return {
