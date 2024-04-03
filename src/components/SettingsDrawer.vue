@@ -125,7 +125,7 @@ const settingsChanged = ref<boolean>(false)
 let selectedColumn = ref<Column>()
 let sampleLineVisible = ref<boolean>(true)
 let selectedMiddleware = ref<Middleware>()
-let settings = ref<Settings>({ leftColWidth: 200, maxMessages: 1000, middlewares: [] })
+let settings = ref<Settings>({ leftColWidth: 200, drawerColWidth: 900, maxMessages: 1000, middlewares: [] })
 
 const props = defineProps<{
     layout: Layout,
@@ -399,7 +399,8 @@ const addMiddleware = () => {
                     <div class="name">{{ col.name }}</div>
                     <div class="controls">
                         <button @click="edit(col.id)" class="btn-sm">Edit</button>
-                        <button @click="toggleView(col.id)" class="btn-sm" :class="{ active: !col.hidden }">Toggle</button>
+                        <button @click="toggleView(col.id)" class="btn-sm"
+                            :class="{ active: !col.hidden }">Toggle</button>
                         <button @click="toggleColumnFaceted(col.id)" :class="{ 'active': col.faceted }"
                             class="btn-sm">Faceted</button>
                         <button @click="removeCol(col.id)" class="btn-sm btn-danger">Remove</button>
@@ -430,7 +431,8 @@ const addMiddleware = () => {
                     </div>
                 </div>
 
-                <div style="margin:10px 0;" :style="{ 'display': !selectedColumn ? 'none' : 'block' }" id="editor"></div>
+                <div style="margin:10px 0;" :style="{ 'display': !selectedColumn ? 'none' : 'block' }" id="editor">
+                </div>
                 <div style="margin-top:10px" v-if="selectedColumn">
                     <button @click="save()">Save</button>
                     <button @click="selectedColumn = undefined">Cancel</button>

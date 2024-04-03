@@ -74,7 +74,7 @@ const importFromJson = () => {
 }
 
 const importLayout = (data: string) => {
-    let l = new Layout('main', { leftColWidth: 300, maxMessages: 1000, middlewares: [] })
+    let l = new Layout('main', { leftColWidth: 300, drawerColWidth: 900, maxMessages: 1000, middlewares: [] })
     l.loadFromObj(JSON.parse(data))
     emit('layout-loaded', l)
 }

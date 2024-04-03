@@ -568,7 +568,6 @@ const updateSampleLine = () => {
   <SettingsDrawer v-if="store.settingsDrawer" @close="store.settingsDrawer = false" :layout="(store.layout as Layout)"
     @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
     @update-sample-line="updateSampleLine" :sampleLine="sampleLine" />
-  <Drawer :row="store.drawer.row" :layout="(store.layout as Layout)" @close="store.closeLogDrawer" />
   <DemoBar v-if="store.demoMode" @start="store.demoStatus = 'started'" @stop="store.demoStatus = 'stopped'"
     @mode="changeDemoMode" @add="addDemoData(100)" />
   <div :class="{ 'demo': store.demoMode }">
@@ -595,26 +594,31 @@ const updateSampleLine = () => {
       </div>
     </div>
     <div class="layout" @mouseup="endDragging">
-      <div class="left-col" :style="{ width: store.layout.settings.leftColWidth + 'px' }" style="position: relative"
-        :class="{ empty: leftColHidden }">
-        <div style="position:absolute; right: 0; cursor: pointer;">
-          <DoubleLeft v-if="!leftColHidden" style="height: 25px; width: 25px;" @click="toggleLeftCol" />
-          <DoubleRight v-if="leftColHidden" style="height: 25px; width: 25px;" @click="toggleLeftCol" />
-        </div>
-        <template v-if="!leftColHidden">
-          <div class="counter">
-            <span>{{ store.displayRows.length }} out of {{ store.rows.length }} logs</span>
-            <br />
-            <button class="btn-sm" style="margin-top:4px" @click="useMainStore().modalShow = 'export-logs'">Export
-              messages</button>
-            <button class="btn-sm" style="margin-top:4px" @click="resetAllFiltersAndFacets">Reset all
-              filters</button>
+      <div style="position: relative">
+        <div class="left-col" :style="{ width: store.layout.settings.leftColWidth + 'px' }"
+          :class="{ empty: leftColHidden }">
+          <div style="position:absolute; right: 0; cursor: pointer;">
+            <DoubleLeft v-if="!leftColHidden" style="height: 25px; width: 25px;" @click="toggleLeftCol" />
+            <DoubleRight v-if="leftColHidden" style="height: 25px; width: 25px;" @click="toggleLeftCol" />
           </div>
-          <Filter />
-          <FacetComponent :facets="store.facets" />
-        </template>
+          <template v-if="!leftColHidden">
+            <div class="counter">
+              <span>{{ store.displayRows.length }} out of {{ store.rows.length }} logs</span>
+              <br />
+              <button class="btn-sm" style="margin-top:4px" @click="useMainStore().modalShow = 'export-logs'">Export
+                messages</button>
+              <button class="btn-sm" style="margin-top:4px" @click="resetAllFiltersAndFacets">Reset all
+                filters</button>
+            </div>
+            <Filter />
+            <FacetComponent :facets="store.facets" />
+          </template>
+        </div>
       </div>
-      <div class="mid-col" :class="{ freeze: leftColHidden }" @mousedown="startDragging"></div>
+
+      <div>
+        <div class="mid-col" :class="{ freeze: leftColHidden }" @mousedown="startDragging"></div>
+      </div>
       <div class="right-col" ref="table">
         <div v-if="columns.length === 0" style="text-align: center; padding-top:100px; font-size: 20px;">
 
@@ -660,6 +664,9 @@ const updateSampleLine = () => {
             </tr>
           </table>
         </template>
+      </div>
+      <div class="drawer-col">
+        <Drawer :row="store.drawer.row" :layout="(store.layout as Layout)" @close="store.closeLogDrawer" />
       </div>
     </div>
   </div>

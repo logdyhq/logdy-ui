@@ -5,6 +5,8 @@ import { ref } from 'vue';
 import ArrowUp from './icon/ArrowUp.vue'
 import ArrowDown from './icon/ArrowDown.vue'
 import Clipboard from './icon/Clipboard.vue'
+import { startDraggingDrawer } from '../dragging';
+import { useMainStore } from '../store';
 
 withDefaults(defineProps<{
     row?: Row,
@@ -24,7 +26,8 @@ const copyToClipboard = (value: string) => {
 </script>
 
 <template>
-    <div class="drawer" v-if="row">
+    <div class="drawer" v-if="row" :style="{ width: useMainStore().layout.settings.drawerColWidth + 'px' }">
+        <div class="resize-handle" @mousedown="startDraggingDrawer"></div>
         <div class="inner-drawer">
             <div class="header">
                 <div style="margin-right: 10px;">
@@ -37,7 +40,7 @@ const copyToClipboard = (value: string) => {
             <h3>Table columns</h3>
             <div v-for="col, k in layout?.columns.filter(c => !c.hidden)">
                 <h4 v-tooltip="'Click to copy'" style="display: inline;" @click="copyToClipboard(row.cells[k].text)">{{
-                    col.name }}
+        col.name }}
                     <Clipboard :class="'clipboard'" />
                 </h4>
                 <pre v-if="!row.cells[k].isJson">{{ row.cells[k].text }}</pre>
@@ -46,7 +49,7 @@ const copyToClipboard = (value: string) => {
             <h3>Non-table fields</h3>
             <div v-for="col, k in layout?.columns.filter(c => c.hidden)">
                 <h4 v-tooltip="'Click to copy'" style="display: inline;" @click="copyToClipboard(row.fields[k].text)">{{
-                    col.name }}
+        col.name }}
                     <Clipboard :class="'clipboard'" />
                 </h4>
                 <pre v-if="!row.fields[k].isJson">{{ row.fields[k].text }}</pre>
@@ -71,14 +74,16 @@ const copyToClipboard = (value: string) => {
                     <pre><code>{{ row.msg.content }}</code></pre>
                 </div>
                 <div v-if="row.msg.origin?.port" class="raw">
-                    <h4 v-tooltip="'Click to copy'" style="display: inline;" @click="copyToClipboard(row.msg.origin?.port)">
+                    <h4 v-tooltip="'Click to copy'" style="display: inline;"
+                        @click="copyToClipboard(row.msg.origin?.port)">
                         Origin port
                         <Clipboard :class="'clipboard'" />
                     </h4>
                     <pre><code>{{ row.msg.origin?.port }}</code></pre>
                 </div>
                 <div v-if="row.msg.origin?.file" class="raw">
-                    <h4 v-tooltip="'Click to copy'" style="display: inline;" @click="copyToClipboard(row.msg.origin?.file)">
+                    <h4 v-tooltip="'Click to copy'" style="display: inline;"
+                        @click="copyToClipboard(row.msg.origin?.file)">
                         Origin filename
                         <Clipboard :class="'clipboard'" />
                     </h4>
@@ -91,15 +96,25 @@ const copyToClipboard = (value: string) => {
 
 <style scoped lang="scss">
 .drawer {
-    position: fixed;
     right: 0;
     top: 0;
-    width: 900px;
     height: calc(100vh - 22px);
     background: var(--hl-bg);
     z-index: 999;
     opacity: 0.97;
     padding: 10px;
+    padding-left: 0px;
+    padding-top: 0;
+
+    .resize-handle {
+        background: white;
+        width: 3px;
+        opacity: 0.2;
+        cursor: ew-resize;
+        height: 100%;
+        float: left;
+        margin-right: 10px;
+    }
 
     h4,
     h3 {
@@ -118,7 +133,7 @@ const copyToClipboard = (value: string) => {
     }
 
     .inner-drawer {
-        margin-top: 10px;
+        padding-top: 20px;
         height: calc(100% - 15px);
         overflow-y: scroll;
 

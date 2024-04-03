@@ -4,6 +4,7 @@ export type ConnectionStatus = "connected" | "not connected"
 export type Settings = {
     maxMessages: number,
     leftColWidth: number,
+    drawerColWidth: number,
     middlewares: Middleware[]
 }
 

@@ -57,7 +57,7 @@ const formatOriginLabel = (l: string) => {
             </div>
             <div class="facet-item" :class="{ 'facet-selected': store.filterToggle[label] }"
                 @click="store.toggleFilter(label)" v-for="[label, k]  in origins">
-                <div class="facet-label">{{ formatOriginLabel(label) }}</div>
+                <div class="facet-label" :title="formatOriginLabel(label)">{{ formatOriginLabel(label) }}</div>
                 <div class="facet-val">{{ k }}</div>
             </div>
         </div>

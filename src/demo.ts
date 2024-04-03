@@ -32,7 +32,7 @@ export function getLayout(json: boolean = true): Layout {
         })
     }
 
-    let l = new Layout("demo", { maxMessages: 1000, leftColWidth: 300, middlewares })
+    let l = new Layout("demo", { maxMessages: 1000, leftColWidth: 300, drawerColWidth: 900, middlewares })
 
     if (!json) {
         l.add({

@@ -8,6 +8,11 @@ export const startDragging = () => {
     document.addEventListener('mousemove', handleDragging)
 }
 
+export const startDraggingDrawer = () => {
+    document.getElementById("app")?.classList.add('noselect')
+    document.addEventListener('mousemove', handleDraggingDrawer)
+}
+
 export const startColumnDragging = (colId: string) => {
     document.getElementById("app")?.classList.add('noselect')
     const signal = new AbortController()
@@ -25,6 +30,7 @@ export const startColumnDragging = (colId: string) => {
 export const endDragging = () => {
     document.getElementById("app")?.classList.remove('noselect')
     document.removeEventListener('mousemove', handleDragging)
+    document.removeEventListener('mousemove', handleDraggingDrawer)
 
     storageLayout.update('main', useMainStore().layout as Layout)
 }
@@ -44,4 +50,8 @@ export const handleColumnDragging = (colId: string, e: MouseEvent) => {
 
 export const handleDragging = (e: MouseEvent) => {
     useMainStore().layout.settings.leftColWidth += (e.movementX)
+}
+
+export const handleDraggingDrawer = (e: MouseEvent) => {
+    useMainStore().layout.settings.drawerColWidth -= (e.movementX)
 }
