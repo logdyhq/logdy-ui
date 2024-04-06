@@ -37,6 +37,16 @@ const copyToClipboard = (value: string) => {
 
                 <button @click="$emit('close')">Close <kbd>Esc</kbd></button>
             </div>
+            <div>
+                <button @click="useMainStore().filterCorrelated(row.msg)" :disabled="!row.msg.correlation_id">
+                    Display correlated lines
+                </button>
+                <button @click="useMainStore().resetCorrelationFilter()" v-if="useMainStore().correlationFilter"
+                    style="margin-left: 5px">
+                    Reset correlation filter
+                </button>
+            </div>
+            <hr />
             <h3>Table columns</h3>
             <div v-for="col, k in layout?.columns.filter(c => !c.hidden)">
                 <h4 v-tooltip="'Click to copy'" style="display: inline;" @click="copyToClipboard(row.cells[k].text)">{{

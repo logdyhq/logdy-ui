@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { storageApp, storageLogs } from "./storage";
-import { FacetValues, Row } from "./types";
+import { FacetValues, Message, Row } from "./types";
 import { Layout } from "./config";
 import { useFilterStore } from "./stores/filter";
 import { client } from "./api";
@@ -55,6 +55,7 @@ export const useMainStore = defineStore("main", () => {
     const facets = ref<FacetValues>({})
     const searchbar = ref<string>("")
     const settingsDrawer = ref<boolean>(false)
+    const correlationFilter = ref<string>("")
 
     const initSettings = ref<InitSettings>()
 
@@ -169,6 +170,23 @@ export const useMainStore = defineStore("main", () => {
         return '-'
     })
 
+    const filterCorrelated = (row: Message) => {
+        if (!row.correlation_id) {
+            return
+        }
+        resetAllFiltersAndFacets()
+        correlationFilter.value = row.correlation_id
+    }
+
+    const resetAllFiltersAndFacets = () => {
+        useFilterStore().resetToggles()
+        clearAllFacets()
+    }
+
+    const resetCorrelationFilter = () => {
+        correlationFilter.value = ""
+    }
+
     const changeReceiveStatus = async (status: ReceiveStatus) => {
         switch (status) {
             case 'following':
@@ -222,6 +240,11 @@ export const useMainStore = defineStore("main", () => {
         let naOriginFilter = filters.filter(f => f.startsWith('origin_na')).length > 0
         let originFilter = filters.filter(f => f.startsWith('origin_')).length > 0
         return rows.value.filter((r) => {
+
+            if (correlationFilter.value && correlationFilter.value != r.msg.correlation_id) {
+                return false;
+            }
+
             let ret = true
             if (filters.length > 0) {
                 if (filters.includes('starred') && !r.starred) return false
@@ -289,7 +312,10 @@ export const useMainStore = defineStore("main", () => {
         stickedToBottom,
 
         clearAllRows,
-        clearAllFacets,
+        resetAllFiltersAndFacets,
+        filterCorrelated,
+        correlationFilter,
+        resetCorrelationFilter,
 
         settingsDrawer,
 

@@ -269,6 +269,11 @@
     border: 1px solid var(--hl-bg4);
     background: var(--hl-bg3);
     border-radius: 7px;
+
+    &.alert-info {
+      border: 1px solid rgb(95, 118, 194);
+      background: rgb(76, 94, 154);
+    }
   }
 
   @import url(facet.scss);

@@ -81,6 +81,11 @@ type Message = {
      * background red.
      */
     style?: object,
+    /**
+     * A correlation identifier used to trace log messages that belongs to the same transaction 
+     * (chain of requests between components within a system).
+     */
+    correlation_id?: string
 }
 
 type CellHandler = {

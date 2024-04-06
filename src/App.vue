@@ -65,11 +65,6 @@ const addToFacet = (f: Facet) => {
   store.facets[f.name].items[idx].count++
 }
 
-const resetAllFiltersAndFacets = () => {
-  storeFilter.resetToggles()
-  store.clearAllFacets()
-}
-
 const removeFromFacet = (r: Row) => {
   r.facets.forEach(f => {
     let idx = store.facets[f.name].items.findIndex(v => v.label === f.value)
@@ -605,10 +600,16 @@ const updateSampleLine = () => {
             <div class="counter">
               <span>{{ store.displayRows.length }} out of {{ store.rows.length }} logs</span>
               <br />
-              <button class="btn-sm" style="margin-top:4px" @click="useMainStore().modalShow = 'export-logs'">Export
+              <button class="btn-sm" style="margin-top:4px" @click="store.modalShow = 'export-logs'">Export
                 messages</button>
-              <button class="btn-sm" style="margin-top:4px" @click="resetAllFiltersAndFacets">Reset all
+              <button class="btn-sm" style="margin-top:4px" @click="store.resetAllFiltersAndFacets()">Reset all
                 filters</button>
+              <div v-if="store.correlationFilter" class="alert alert-info"
+                style="margin-top: 10px; margin:10px; font-size: 13px">
+                Correlation filter active ({{ store.correlationFilter }})
+                <button class="btn-sm" style="margin-top:4px" @click="store.resetCorrelationFilter()">Reset correlation
+                  filter</button>
+              </div>
             </div>
             <Filter />
             <FacetComponent :facets="store.facets" />

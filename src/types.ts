@@ -59,6 +59,32 @@ export type Message = {
      * background red.
      */
     style?: object,
+    /**
+     * A correlation identifier used to trace log messages that belongs to the same transaction 
+     * (chain of requests between components within a system).
+     */
+    correlation_id?: string,
+    /**
+     * This object can be filled with values that represent timings 
+     * of the event represented by the particular log line.
+     * All of the value must be positive numbers. 
+     * There is no defined unit.
+     */
+    timing?: {
+        /**
+         * Represents a start of the event
+        */
+        start: number,
+        /**
+         * Represents an end of the event
+        */
+        end?: number,
+        /**
+         * Represents a duration of the event. In case an `end` is present
+         * this field will be ignored.
+        */
+        duration?: number
+    }
 }
 
 export type CellHandler = {
