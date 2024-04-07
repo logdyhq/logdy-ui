@@ -20,6 +20,7 @@ body.dark {
   --hl-bg2: #3f3f3f;
   --hl-bg3: #595959;
   --bg-btn: #1a1a1a;
+  --info: rgb(76, 94, 154);
 }
 
 body.light{
@@ -30,6 +31,7 @@ body.light{
   --hl-bg2: #9d9d9d;
   --hl-bg3: #8c8c8c;
   --bg-btn: #c5c5c5;
+  --info: rgb(145, 155, 186);
 }
 
 @media (prefers-color-scheme: light) {
@@ -41,8 +43,9 @@ body.light{
     --hl-bg2: #9d9d9d;
     --hl-bg3: #8c8c8c;
     --bg-btn: #c5c5c5;
+    --info: rgb(145, 155, 186);
   }
-
+  
   body.dark {
     color-scheme: dark;
     --font: #efefef;
@@ -51,6 +54,7 @@ body.light{
     --hl-bg2: #3f3f3f;
     --hl-bg3: #595959;
     --bg-btn: #1a1a1a;
+    --info: rgb(76, 94, 154);
   }
   a:hover {
     color: #747bff;

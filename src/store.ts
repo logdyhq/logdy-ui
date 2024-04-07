@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { storageApp, storageLogs } from "./storage";
-import { FacetValues, Message, Row } from "./types";
+import { FacetValues, Message, Row, TraceRow } from "./types";
 import { Layout } from "./config";
 import { useFilterStore } from "./stores/filter";
 import { client } from "./api";
@@ -56,6 +56,7 @@ export const useMainStore = defineStore("main", () => {
     const searchbar = ref<string>("")
     const settingsDrawer = ref<boolean>(false)
     const correlationFilter = ref<string>("")
+    const tracesRows = ref<TraceRow[]>([])
 
     const initSettings = ref<InitSettings>()
 
@@ -176,6 +177,23 @@ export const useMainStore = defineStore("main", () => {
         }
         resetAllFiltersAndFacets()
         correlationFilter.value = row.correlation_id
+
+        let traces: TraceRow[] = []
+        let absStart = displayRows.value[0].msg.timing && displayRows.value[0].msg.timing.start || 0
+        let resolution = 1//(end - absStart) / 1000
+        displayRows.value.forEach((r) => {
+            if (!r.msg.timing) {
+                return
+            }
+            traces.push({
+                id: r.id,
+                offset: (r.msg.timing!.start - absStart) / resolution,
+                width: (r.msg.timing?.duration || 1) / resolution,
+                label: r.msg.timing?.label
+            })
+        })
+
+        tracesRows.value = traces
     }
 
     const resetAllFiltersAndFacets = () => {
@@ -316,6 +334,7 @@ export const useMainStore = defineStore("main", () => {
         filterCorrelated,
         correlationFilter,
         resetCorrelationFilter,
+        tracesRows,
 
         settingsDrawer,
 

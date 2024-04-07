@@ -83,6 +83,14 @@ const copyToClipboard = (value: string) => {
                     </h4>
                     <pre><code>{{ row.msg.content }}</code></pre>
                 </div>
+                <div v-if="row.msg.timing" class="raw">
+                    <h4 v-tooltip="'Click to copy'" style="display: inline;"
+                        @click="copyToClipboard(JSON.stringify(row.msg.timing))">
+                        Timing
+                        <Clipboard :class="'clipboard'" />
+                    </h4>
+                    <pre v-highlightjs><code>{{ row.msg.timing }}</code></pre>
+                </div>
                 <div v-if="row.msg.origin?.port" class="raw">
                     <h4 v-tooltip="'Click to copy'" style="display: inline;"
                         @click="copyToClipboard(row.msg.origin?.port)">
@@ -157,7 +165,7 @@ const copyToClipboard = (value: string) => {
 
     pre {
         margin: 6px 0;
-        background: #1E1E1E;
+        background: var(--bg);
         padding: 10px;
         white-space: pre-wrap;
     }

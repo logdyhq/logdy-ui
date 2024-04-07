@@ -36,6 +36,15 @@ const table = ref<HTMLElement>()
 
 const columns = ref<Column[]>([])
 const sampleLineIndex = ref<number>(0)
+const traceResolution = ref<number>(20)
+
+const changeTraceResolution = (delta: number) => {
+  if (traceResolution.value + delta <= 0) {
+    return
+  }
+
+  traceResolution.value += delta
+}
 
 const leftColHidden = ref<boolean>(false)
 
@@ -607,6 +616,11 @@ const updateSampleLine = () => {
               <div v-if="store.correlationFilter" class="alert alert-info"
                 style="margin-top: 10px; margin:10px; font-size: 13px">
                 Correlation filter active ({{ store.correlationFilter }})
+                <br />
+                Change resolution:
+                <button class="btn-sm" @click="changeTraceResolution(1)">-</button>
+                <button class="btn-sm" @click="changeTraceResolution(-1)">+</button>
+                <br />
                 <button class="btn-sm" style="margin-top:4px" @click="store.resetCorrelationFilter()">Reset correlation
                   filter</button>
               </div>
@@ -651,8 +665,10 @@ const updateSampleLine = () => {
                 <div class="header-border" @mousedown="startColumnDragging(col.id)">
                   &nbsp;</div>
               </th>
+              <th v-if="store.correlationFilter">Trace
+              </th>
             </tr>
-            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row in store.displayRows"
+            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row, i in store.displayRows"
               @click="store.openLogDrawer(row)" :style="(row.msg.style as StyleValue || {})">
               <td>
                 <span class="mark" :class="{ active: row.starred }" @click.stop="store.toggleRowMark(row)">
@@ -661,6 +677,14 @@ const updateSampleLine = () => {
               </td>
               <td class="cell" v-for="_, k2 in columns" :style="row.cells[k2].style as StyleValue || {}">
                 <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
+              </td>
+              <td class="cell" v-if="store.correlationFilter" style="min-width: 50px;">
+                <div v-if="store.tracesRows[i] && store.tracesRows[i].id === row.id" class="trace-block"
+                  v-tooltip="store.tracesRows[i].label"
+                  :style="{ width: store.tracesRows[i].width / traceResolution + 'px', marginLeft: store.tracesRows[i].offset / traceResolution + 'px' }">
+                  {{ store.tracesRows[i].label }}
+                </div>
+                <template v-else>-</template>
               </td>
             </tr>
           </table>

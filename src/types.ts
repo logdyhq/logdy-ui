@@ -80,10 +80,14 @@ export type Message = {
         */
         end?: number,
         /**
-         * Represents a duration of the event. In case an `end` is present
+         * Represents a duration of the event. In case an 'end' is present
          * this field will be ignored.
         */
-        duration?: number
+        duration?: number,
+        /**
+         * The message to present when hovering over block in trace view
+         */
+        label?: string
     }
 }
 
@@ -159,6 +163,13 @@ export type MessageMetadata = {
 export type StoredMessage = MessageMetadata & {
     id?: string,
     message: Message
+}
+
+export type TraceRow = {
+    id: string,
+    offset: number,
+    width: number,
+    label?: string
 }
 
 export type Row = MessageMetadata & {
