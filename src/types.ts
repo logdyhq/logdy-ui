@@ -73,21 +73,38 @@ export type Message = {
     timing?: {
         /**
          * Represents a start of the event
-        */
+         */
         start: number,
         /**
          * Represents an end of the event
-        */
+         */
         end?: number,
         /**
          * Represents a duration of the event. In case an 'end' is present
          * this field will be ignored.
-        */
+         */
         duration?: number,
         /**
          * The message to present when hovering over block in trace view
          */
-        label?: string
+        label?: string,
+        /**
+         * Styles to be applied to a particular trace
+         */
+        style?: {
+            /**
+             * Background style
+             */
+            backgroundColor?: string,
+            /**
+             * Border style
+             */
+            border?: string,
+            /**
+             * Font color
+             */
+            color?: string,
+        }
     }
 }
 
@@ -169,7 +186,8 @@ export type TraceRow = {
     id: string,
     offset: number,
     width: number,
-    label?: string
+    label?: string,
+    style?: object,
 }
 
 export type Row = MessageMetadata & {

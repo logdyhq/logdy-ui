@@ -109,7 +109,24 @@ type Message = {
         /**
          * The message to present when hovering over block in trace view
          */
-        label?: string
+        label?: string,
+        /**
+         * Styles to be applied to a particular trace
+         */
+        style?: {
+            /**
+             * Background style
+             */
+            backgroundColor?: string,
+            /**
+             * Border style
+             */
+            border?: string,
+            /**
+             * Font color
+             */
+            color?: string,
+        },
     }
 }
 

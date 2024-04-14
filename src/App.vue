@@ -99,6 +99,7 @@ const processMiddlewares = (msg: Message, middlewares: Middleware[]): Message | 
 const tryAddMessage = (msgs: Message[], settings: Settings): Message[] => {
   try {
     let mm = msgs.map(m => processMiddlewares(m, settings.middlewares)).filter(m => m) as Message[]
+    store.refeshFilterCorrelated()
     if (msgs) {
       return addMessages(mm)
     }
@@ -249,7 +250,6 @@ const loadStorage = () => {
   store.rows.forEach((r, k) => {
     let stored = msgId[r.id]
     if (!stored) {
-      console.error("whoops")
       return
     }
 
@@ -668,7 +668,7 @@ const updateSampleLine = () => {
               <th v-if="store.correlationFilter">Trace
               </th>
             </tr>
-            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row, i in store.displayRows"
+            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row in store.displayRows"
               @click="store.openLogDrawer(row)" :style="(row.msg.style as StyleValue || {})">
               <td>
                 <span class="mark" :class="{ active: row.starred }" @click.stop="store.toggleRowMark(row)">
@@ -679,10 +679,13 @@ const updateSampleLine = () => {
                 <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text }}</div>
               </td>
               <td class="cell" v-if="store.correlationFilter" style="min-width: 50px;">
-                <div v-if="store.tracesRows[i] && store.tracesRows[i].id === row.id" class="trace-block"
-                  v-tooltip="store.tracesRows[i].label"
-                  :style="{ width: store.tracesRows[i].width / traceResolution + 'px', marginLeft: store.tracesRows[i].offset / traceResolution + 'px' }">
-                  {{ store.tracesRows[i].label }}
+                <div v-if="store.tracesRows[row.id] && store.tracesRows[row.id].id === row.id" class="trace-block"
+                  v-tooltip="store.tracesRows[row.id].label || ''" :style="{
+    width: store.tracesRows[row.id].width / traceResolution + 'px',
+    marginLeft: store.tracesRows[row.id].offset / traceResolution + 'px',
+    ...store.tracesRows[row.id].style
+  }">
+                  {{ store.tracesRows[row.id].label || '&nbsp' }}
                 </div>
                 <template v-else>-</template>
               </td>

@@ -56,7 +56,7 @@ export const useMainStore = defineStore("main", () => {
     const searchbar = ref<string>("")
     const settingsDrawer = ref<boolean>(false)
     const correlationFilter = ref<string>("")
-    const tracesRows = ref<TraceRow[]>([])
+    const tracesRows = ref<Record<string, TraceRow>>({})
 
     const initSettings = ref<InitSettings>()
 
@@ -175,22 +175,30 @@ export const useMainStore = defineStore("main", () => {
         if (!row.correlation_id) {
             return
         }
-        resetAllFiltersAndFacets()
         correlationFilter.value = row.correlation_id
+        refeshFilterCorrelated()
+    }
 
-        let traces: TraceRow[] = []
+    const refeshFilterCorrelated = () => {
+        if (!correlationFilter.value || displayRows.value.length === 0) {
+            return
+        }
+
+        let traces: Record<string, TraceRow> = {}
         let absStart = displayRows.value[0].msg.timing && displayRows.value[0].msg.timing.start || 0
         let resolution = 1//(end - absStart) / 1000
         displayRows.value.forEach((r) => {
             if (!r.msg.timing) {
                 return
             }
-            traces.push({
+
+            traces[r.id] = {
                 id: r.id,
                 offset: (r.msg.timing!.start - absStart) / resolution,
                 width: (r.msg.timing?.duration || 1) / resolution,
-                label: r.msg.timing?.label
-            })
+                label: r.msg.timing?.label,
+                style: r.msg.timing?.style || {}
+            }
         })
 
         tracesRows.value = traces
@@ -335,6 +343,7 @@ export const useMainStore = defineStore("main", () => {
         correlationFilter,
         resetCorrelationFilter,
         tracesRows,
+        refeshFilterCorrelated,
 
         settingsDrawer,
 
