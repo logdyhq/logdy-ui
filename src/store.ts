@@ -238,6 +238,10 @@ export const useMainStore = defineStore("main", () => {
         storageLogs.removeAll()
     }
 
+    const clearRowIds = () => {
+        rowsIds.value = {}
+    }
+
     const clearAllFacets = () => {
         for (let i in facets.value) {
             let f = facets.value[i]
@@ -355,6 +359,7 @@ export const useMainStore = defineStore("main", () => {
 
         rows,
         rowsIds,
+        clearRowIds,
         displayRows,
 
         facets,

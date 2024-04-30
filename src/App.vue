@@ -114,6 +114,7 @@ const tryAddMessage = (msgs: Message[], settings: Settings): Message[] => {
 
 const addMessages = (msgs: Message[]): Message[] => {
   //filter rows that are already present
+  console.log(Object.keys(store.rowsIds).length)
   msgs = msgs.filter(msg => {
     // remove messags that are older than the first message in a table
     if (store.rows.length > 0 && msg.ts < store.rows[0].msg.ts) {
@@ -345,7 +346,8 @@ const settingsUpdate = (settings: Settings) => {
 
 const render = () => {
   store.rows = []
-  Object.assign(store.rowsIds, {})
+  store.clearRowIds()
+  console.log(store.rowsIds)
   store.facets = {}
   loadColumnsFromLayout()
   loadStorage()
