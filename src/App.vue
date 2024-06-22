@@ -355,7 +355,8 @@ const render = () => {
 
 const connectToWs = () => {
   console.log("Connecting to WS")
-  const socket = new WebSocket('ws://' + window.location.host + '/ws?password=' + store.getPassword());
+  let wsProto = window.location.protocol === 'https' ? 'wss' : 'ws'
+  const socket = new WebSocket(wsProto + '://' + window.location.host + '/ws?password=' + store.getPassword());
   store.status = 'not connected'
   var wasOpened = false
 
