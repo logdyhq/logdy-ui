@@ -18,7 +18,7 @@
     "pinia": "^2.1.7",
     "sass": "^1.69.7",
     "vue": "^3.3.11",
-    "vue-json-pretty": "^2.4.0",
+    "vue-json-pretty": "^2.4.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.5.2",
