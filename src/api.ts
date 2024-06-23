@@ -16,10 +16,10 @@ class httpClient {
         this.setHeader("logdy-client-id", val)
     }
 
-    async sendGet(path: string): Promise<{
+    async sendGet<T = Record<string, any>>(path: string): Promise<{
         status: number,
         headers: Headers,
-        json?: Record<string, any>,
+        json?: T,
         body?: string
     }> {
 
@@ -28,7 +28,7 @@ class httpClient {
             headers = this.onRequestStart() || {}
         }
 
-        let res = await fetch("/api/" + path, {
+        let res = await fetch(window.location.pathname + "api/" + path, {
             method: "GET",
             headers: {
                 // "Content-Type": "application/json",
@@ -46,10 +46,10 @@ class httpClient {
         }
     }
 
-    async sendPost(path: string, data?: object): Promise<{
+    async sendPost<T = Record<string, any>>(path: string, data?: object): Promise<{
         status: number,
         headers: Headers,
-        json?: Record<string, any>,
+        json?: T,
         body?: string
     }> {
 
@@ -58,7 +58,7 @@ class httpClient {
             headers = this.onRequestStart() || {}
         }
 
-        let res = await fetch("/api/" + path, {
+        let res = await fetch("api/" + path, {
             method: "POST",
             body: data ? JSON.stringify(data) : null,
             headers: {

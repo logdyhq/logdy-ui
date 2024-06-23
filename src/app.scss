@@ -1,12 +1,5 @@
 @use "sass:meta";
 
-body[data-theme="light"] {
-  @include meta.load-css("highlight.js/styles/vs.css");
-}
-body[data-theme="dark"] {
-  @include meta.load-css("highlight.js/styles/vs2015.css");
-}
-
 .top-bar {
     height: 50px;
     display: flex;

@@ -18,6 +18,7 @@ export interface InitSettings {
     received: boolean;
     analyticsEnabled: boolean;
     authRequired: boolean;
+    apiPrefix: string;
 
     // this will hold a Layout JSON to load from the backend
     configStr: string;

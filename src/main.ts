@@ -2,7 +2,6 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 //@ts-expect-error
-import VueHighlightJS from 'vue3-highlightjs'
 import moment from 'moment'
 import { createPinia } from 'pinia'
 import "./app.scss"
@@ -16,7 +15,6 @@ window.document.title = 'Logdy'
 themeHandler.initTheme()
 
 createApp(App)
-    .use(VueHighlightJS)
     .use(createPinia())
     .use(FloatingVue, {
         themes: {

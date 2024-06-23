@@ -354,9 +354,10 @@ const render = () => {
 }
 
 const connectToWs = () => {
-  console.log("Connecting to WS")
   let wsProto = window.location.protocol === 'https' ? 'wss' : 'ws'
-  const socket = new WebSocket(wsProto + '://' + window.location.host + '/ws?password=' + store.getPassword());
+  const endpoint = wsProto + '://' + window.location.host + window.location.pathname + 'ws'
+  console.log("Connecting to WS", endpoint)
+  const socket = new WebSocket(endpoint + '?password=' + store.getPassword());
   store.status = 'not connected'
   var wasOpened = false
 
@@ -516,18 +517,11 @@ const postAuth = () => {
 }
 
 const initWs = async (): Promise<boolean> => {
-  let res = await fetch("/api/status")
+  let init = await client.sendGet<InitSettings>("status")
 
-  let init
-  try {
-    init = await res.json() as InitSettings
-  } catch (e) {
-    return false
-  }
+  store.initSettings = init.json!
 
-  store.initSettings = init
-
-  let passValid = await fetch("/api/check-pass?password=" + store.getPassword())
+  let passValid = await client.sendGet("check-pass?password=" + store.getPassword())
   if (store.initSettings.authRequired && passValid.status !== 200) {
     store.modalShow = "auth"
   } else {

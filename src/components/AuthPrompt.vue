@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useMainStore } from '../store';
+import { client } from "../api"
 
 const pass = ref<string>("")
 const input = ref<HTMLInputElement>()
@@ -19,7 +20,7 @@ onMounted(() => {
 const submit = async () => {
     msg.value = ""
     loading.value = true
-    let res = await fetch("/api/check-pass?password=" + pass.value)
+    let res = await client.sendGet("check-pass?password=" + pass.value)
 
     loading.value = false
     if (res.status == 200) {

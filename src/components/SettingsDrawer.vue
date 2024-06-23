@@ -500,7 +500,9 @@ const addMiddleware = () => {
                         <h4>Field: is_json</h4>
                         <pre>{{ sampleLine?.is_json }}</pre>
                         <h4>Field: json_content</h4>
-                        <pre v-highlightjs><code class="json">{{ sampleLine?.json_content }}</code></pre>
+                        <pre>
+                            <VueJsonPretty :theme="'dark'" :data="sampleLine?.json_content"></VueJsonPretty>
+                        </pre>
                     </div>
                     <div v-else>
                         <pre>No sample line provided</pre>

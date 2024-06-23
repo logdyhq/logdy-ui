@@ -7,6 +7,8 @@ import ArrowDown from './icon/ArrowDown.vue'
 import Clipboard from './icon/Clipboard.vue'
 import { startDraggingDrawer } from '../dragging';
 import { useMainStore } from '../store';
+import VueJsonPretty from 'vue-json-pretty';
+import 'vue-json-pretty/lib/styles.css';
 
 withDefaults(defineProps<{
     row?: Row,
@@ -54,7 +56,10 @@ const copyToClipboard = (value: string) => {
                     <Clipboard :class="'clipboard'" />
                 </h4>
                 <pre v-if="!row.cells[k].isJson">{{ row.cells[k].text }}</pre>
-                <pre v-else v-highlightjs><code class="json">{{ JSON.parse(row.cells[k].text) }}</code></pre>
+                <pre v-else>
+                    <VueJsonPretty  :theme="'dark'" :data="JSON.parse(row.cells[k].text)"></VueJsonPretty>
+                </pre>
+
             </div>
             <h3>Non-table fields</h3>
             <div v-for="col, k in layout?.columns.filter(c => c.hidden)">
@@ -63,7 +68,9 @@ const copyToClipboard = (value: string) => {
                     <Clipboard :class="'clipboard'" />
                 </h4>
                 <pre v-if="!row.fields[k].isJson">{{ row.fields[k].text }}</pre>
-                <pre v-else v-highlightjs><code class="json">{{ row.fields[k].text }}</code></pre>
+                <pre v-else>
+                    <VueJsonPretty  :theme="'dark'" :data="row.fields[k].text"></VueJsonPretty>
+                </pre>
             </div>
             <hr />
             <button @click="showRaw = !showRaw">Show/hide raw message</button>
@@ -74,7 +81,9 @@ const copyToClipboard = (value: string) => {
                         Raw message (JSON)
                         <Clipboard :class="'clipboard'" />
                     </h4>
-                    <pre v-highlightjs><code class="json">{{ row.msg.json_content }}</code></pre>
+                    <pre>
+                        <VueJsonPretty  :theme="'dark'" :data="row.msg.json_content"></VueJsonPretty>
+                    </pre>
                 </div>
                 <div v-if="!row.msg.is_json" class="raw">
                     <h4 v-tooltip="'Click to copy'" style="display: inline;" @click="copyToClipboard(row.msg.content)">
@@ -89,7 +98,9 @@ const copyToClipboard = (value: string) => {
                         Timing
                         <Clipboard :class="'clipboard'" />
                     </h4>
-                    <pre v-highlightjs><code>{{ row.msg.timing }}</code></pre>
+                    <pre>
+                        <VueJsonPretty  :theme="'dark'" :data="row.msg.timing"></VueJsonPretty>
+                    </pre>
                 </div>
                 <div v-if="row.msg.origin?.port" class="raw">
                     <h4 v-tooltip="'Click to copy'" style="display: inline;"
@@ -116,7 +127,7 @@ const copyToClipboard = (value: string) => {
 .drawer {
     right: 0;
     top: 0;
-    height: calc(100vh - 22px);
+    height: calc(100vh - 73px);
     background: var(--hl-bg);
     z-index: 999;
     opacity: 0.97;
