@@ -55,7 +55,7 @@ const copyToClipboard = (value: string) => {
         col.name }}
                     <Clipboard :class="'clipboard'" />
                 </h4>
-                <pre v-if="!row.cells[k].isJson">{{ row.cells[k].text }}</pre>
+                <pre v-if="row.cells[k] && !row.cells[k].isJson">{{ row.cells[k].text }}</pre>
                 <pre v-else>
                     <VueJsonPretty  :theme="'dark'" :data="JSON.parse(row.cells[k].text)"></VueJsonPretty>
                 </pre>

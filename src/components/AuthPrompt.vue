@@ -38,7 +38,8 @@ const submit = async () => {
     <div style="margin-bottom: 10px">To access Logdy you need to provide a password. <a href="https://logdy.dev">What is
             Logdy?</a></div>
     <div>
-        <input class="input" ref="input" v-model="pass" type="text" style="min-width: 400px;" @keyup.enter="submit" />
+        <input class="input" ref="input" v-model="pass" type="password" style="min-width: 400px;"
+            @keyup.enter="submit" />
     </div>
     <div v-if="loading">loading...</div>
     <div style="margin-top: 10px">

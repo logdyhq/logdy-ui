@@ -11,6 +11,8 @@ import { LIB_ES5_D_LIB } from "../lib_es5";
 import { LIB_ES2015_PROMISE_LIB } from "../lib_es2015.promise";
 import { LIB_ES5_CORE_LIB } from "../lib_es2015_core";
 import { useMainStore } from "../store";
+import VueJsonPretty from 'vue-json-pretty';
+import 'vue-json-pretty/lib/styles.css';
 
 self.MonacoEnvironment = {
     getWorker: function (_, label) {
