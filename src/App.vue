@@ -354,7 +354,7 @@ const render = () => {
 }
 
 const connectToWs = () => {
-  let wsProto = window.location.protocol === 'https' ? 'wss' : 'ws'
+  let wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws'
   const endpoint = wsProto + '://' + window.location.host + window.location.pathname + 'ws'
   console.log("Connecting to WS", endpoint)
   const socket = new WebSocket(endpoint + '?password=' + store.getPassword());
