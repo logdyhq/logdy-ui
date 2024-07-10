@@ -56,9 +56,7 @@ const copyToClipboard = (value: string) => {
                     <Clipboard :class="'clipboard'" />
                 </h4>
                 <pre v-if="row.cells[k] && !row.cells[k].isJson">{{ row.cells[k].text }}</pre>
-                <pre v-else>
-                    <VueJsonPretty  :theme="'dark'" :data="JSON.parse(row.cells[k].text)"></VueJsonPretty>
-                </pre>
+                <pre v-else><VueJsonPretty  :theme="'dark'" :data="JSON.parse(row.cells[k].text)"></VueJsonPretty></pre>
 
             </div>
             <h3>Non-table fields</h3>
@@ -68,9 +66,7 @@ const copyToClipboard = (value: string) => {
                     <Clipboard :class="'clipboard'" />
                 </h4>
                 <pre v-if="!row.fields[k].isJson">{{ row.fields[k].text }}</pre>
-                <pre v-else>
-                    <VueJsonPretty  :theme="'dark'" :data="row.fields[k].text"></VueJsonPretty>
-                </pre>
+                <pre v-else><VueJsonPretty  :theme="'dark'" :data="row.fields[k].text"></VueJsonPretty></pre>
             </div>
             <hr />
             <button @click="showRaw = !showRaw">Show/hide raw message</button>
@@ -81,9 +77,7 @@ const copyToClipboard = (value: string) => {
                         Raw message (JSON)
                         <Clipboard :class="'clipboard'" />
                     </h4>
-                    <pre>
-                        <VueJsonPretty  :theme="'dark'" :data="row.msg.json_content"></VueJsonPretty>
-                    </pre>
+                    <pre><VueJsonPretty  :theme="'dark'" :data="row.msg.json_content"></VueJsonPretty></pre>
                 </div>
                 <div v-if="!row.msg.is_json" class="raw">
                     <h4 v-tooltip="'Click to copy'" style="display: inline;" @click="copyToClipboard(row.msg.content)">
@@ -98,9 +92,7 @@ const copyToClipboard = (value: string) => {
                         Timing
                         <Clipboard :class="'clipboard'" />
                     </h4>
-                    <pre>
-                        <VueJsonPretty  :theme="'dark'" :data="row.msg.timing"></VueJsonPretty>
-                    </pre>
+                    <pre><VueJsonPretty  :theme="'dark'" :data="row.msg.timing"></VueJsonPretty></pre>
                 </div>
                 <div v-if="row.msg.origin?.port" class="raw">
                     <h4 v-tooltip="'Click to copy'" style="display: inline;"
@@ -109,6 +101,14 @@ const copyToClipboard = (value: string) => {
                         <Clipboard :class="'clipboard'" />
                     </h4>
                     <pre><code>{{ row.msg.origin?.port }}</code></pre>
+                </div>
+                <div v-if="row.msg.origin?.api_source" class="raw">
+                    <h4 v-tooltip="'Click to copy'" style="display: inline;"
+                        @click="copyToClipboard(row.msg.origin?.api_source)">
+                        Origin API
+                        <Clipboard :class="'clipboard'" />
+                    </h4>
+                    <pre><code>{{ row.msg.origin?.api_source }}</code></pre>
                 </div>
                 <div v-if="row.msg.origin?.file" class="raw">
                     <h4 v-tooltip="'Click to copy'" style="display: inline;"

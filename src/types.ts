@@ -51,7 +51,11 @@ export type Message = {
         /**
          * Origin file name with path
          */
-        file: string
+        file: string,
+        /**
+         * Origin of the message coming from the API
+         */
+        api_source: string
     },
     /** 
      * Special styles that will be applied to entire row
