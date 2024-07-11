@@ -347,7 +347,6 @@ const settingsUpdate = (settings: Settings) => {
 const render = () => {
   store.rows = []
   store.clearRowIds()
-  console.log(store.rowsIds)
   store.facets = {}
   loadColumnsFromLayout()
   loadStorage()
@@ -449,7 +448,8 @@ const addDemoData = (count: number = 1) => {
   let rand = Math.random()
   let origin = {
     port: "",
-    file: ""
+    file: "",
+    api_source: ""
   }
   if (rand < 0.50) {
     origin.port = "8123"
