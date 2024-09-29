@@ -5,17 +5,17 @@ type ThemeValue = "light" | "dark"
 const theme = ref<ThemeValue>()
 
 const initTheme = () => {
-
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        setTheme('dark')
-    }
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-        setTheme('light')
-    }
-
     let theme = localStorage.getItem('theme')
+
     if (theme) {
         setTheme(theme as ThemeValue)
+    } else {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            setTheme('dark')
+        }
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            setTheme('light')
+        }
     }
 }
 
