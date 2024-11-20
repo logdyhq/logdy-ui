@@ -35,7 +35,7 @@ interface ReceiveCounters {
 export const useMainStore = defineStore("main", () => {
 
     const demoMode = ref<boolean>(
-        document.location.host.indexOf('demo') >= 0 ||
+        document.location.host.indexOf('demo.logdy.dev') >= 0 ||
         document.location.search.indexOf('demo') >= 0
     )
     const demoStatus = ref<"started" | "stopped">("started")
