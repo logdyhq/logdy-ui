@@ -47,6 +47,7 @@ const changeTraceResolution = (delta: number) => {
 }
 
 const leftColHidden = ref<boolean>(false)
+const version = __APP_VERSION__
 
 storageLogs.startClearingUnknowns()
 
@@ -577,6 +578,9 @@ const updateSampleLine = () => {
         <div class="logo">
           <a href="https://logdy.dev" target="_blank"><img src="/logdy-transparent.png" /></a>
         </div>
+        <div>
+          <span style="font-size: 11px; opacity: 0.6;">v{{ version }}</span>
+        </div>
         <div class="docs link-style">
           <a href="https://logdy.dev/docs/quick-start" target="_blank">Docs
           </a>
@@ -678,10 +682,10 @@ const updateSampleLine = () => {
               <td class="cell" v-if="store.correlationFilter" style="min-width: 50px;">
                 <div v-if="store.tracesRows[row.id] && store.tracesRows[row.id].id === row.id" class="trace-block"
                   v-tooltip="store.tracesRows[row.id].label || ''" :style="{
-    width: store.tracesRows[row.id].width / traceResolution + 'px',
-    marginLeft: store.tracesRows[row.id].offset / traceResolution + 'px',
-    ...store.tracesRows[row.id].style
-  }">
+                    width: store.tracesRows[row.id].width / traceResolution + 'px',
+                    marginLeft: store.tracesRows[row.id].offset / traceResolution + 'px',
+                    ...store.tracesRows[row.id].style
+                  }">
                   {{ store.tracesRows[row.id].label || '&nbsp' }}
                 </div>
                 <template v-else>-</template>

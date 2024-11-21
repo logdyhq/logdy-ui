@@ -17,6 +17,9 @@ const monacoEditorPlugin = isObjectWithDefaultFunction(monacoEditorPluginModule)
 export default defineConfig({
   plugins: [vue(), monacoEditorPlugin({ languageWorkers: ['typescript'] })],
   base: "",
+  define: {
+    '__APP_VERSION__': JSON.stringify(process.env.npm_package_version),
+  },
   server: {
     host: "0.0.0.0",
     port: 1001,
