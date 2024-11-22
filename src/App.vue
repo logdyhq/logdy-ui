@@ -115,7 +115,6 @@ const tryAddMessage = (msgs: Message[], settings: Settings): Message[] => {
 
 const addMessages = (msgs: Message[]): Message[] => {
   //filter rows that are already present
-  console.log(Object.keys(store.rowsIds).length)
   msgs = msgs.filter(msg => {
     // remove messags that are older than the first message in a table
     if (store.rows.length > 0 && msg.ts < store.rows[0].msg.ts) {
@@ -206,6 +205,7 @@ const addMessages = (msgs: Message[]): Message[] => {
     if (store.stickedToBottom) {
       stickToBottom()
     }
+    updateRowsToDisplay()
   }, 10)
 
   return msgs
@@ -501,14 +501,45 @@ onMounted(async () => {
 
   initKeyEventListeners()
 
+  updateRowsToDisplay()
+
+})
+
+watch(columns, ()=>{
+  
+  if(columns.value.length>0){
+    setTimeout(()=>{
+      console.log(table.value)
   table.value?.addEventListener("scroll", () => {
     if (!shouldStickToBottom()) {
       store.stickedToBottom = false
     } else {
       store.stickedToBottom = true
     }
+    console.log(tableScrollTop)
+    tableScrollTop.value = table.value?.scrollTop || 0
+    updateRowsToDisplay()
   })
+},100)
+}
 })
+
+const tableScrollTop = ref<number>(0)
+const rowsToDisplay = ref<Row[]>([])
+const updateRowsToDisplay = ()=>{
+let idx = 0
+  if(tableScrollTop.value > 0){
+    idx = Math.floor(tableScrollTop.value/20)
+  }
+console.log("UPDATE", idx)
+  rowsToDisplay.value = store.displayRows.slice(idx, idx+150).map((r,k) => {
+    r.msg.style = {
+      ...r.msg.style||{},
+      top: ((idx*20)+(k*20)).toString()+'px'
+    }
+    return r
+  })
+}
 
 const postAuth = () => {
   store.modalShow = ""
@@ -635,7 +666,7 @@ const updateSampleLine = () => {
       <div>
         <div class="mid-col" :class="{ freeze: leftColHidden }" @mousedown="startDragging"></div>
       </div>
-      <div class="right-col" ref="table">
+      <div class="right-col" style="overflow-x:scroll" ref="table">
         <div v-if="columns.length === 0" style="text-align: center; padding-top:100px; font-size: 20px;">
 
           <div v-if="useMainStore().status == 'not connected'" style="margin: 10px; padding: 5px;">Status: <strong>Not
@@ -653,7 +684,46 @@ const updateSampleLine = () => {
             <template v-if="!store.stickedToBottom">Stick to bottom</template>
             <template v-else>Sticked</template>
           </div>
-          <table class="table" cellspacing="0" cellpadding="0">
+          <div style="overflow:scroll; display:inline; position:relative">
+          <div class="table" style="display: flex; position:sticky; top:0">
+            <div style="width:22px">&nbsp;</div>
+            <div v-for="col in columns" :style="{ width: ((col.width||0)-4) + 'px', cursor: 'auto', padding: '1px 2px', textAlign:'center', flexShrink:0 }" class="column-name">
+                <span style="cursor: auto;">{{ col.name }}</span>
+                <div class="hide-icon"
+                  style="height: 12px; width: 12px; display: inline; visibility: hidden; opacity: 0.4; cursor: pointer; margin-left: 3px;"
+                  @click="hideColumn(col)">
+                  <HideColumnIcon />
+                </div>
+                <div class="header-border" @mousedown="startColumnDragging(col.id)">
+                  &nbsp;</div>
+                </div>
+          </div>
+          <div class="table" style="overflow: hidden; height:100%;">
+            <div class="row" :class="{ opened: row.opened, open: row.open }" v-for="row in rowsToDisplay"
+              @click="store.openLogDrawer(row)" :style="{...(row.msg.style || {}), display:'flex', position:'absolute'}">
+              <div style="width:22px">
+                <span class="mark" :class="{ active: row.starred }" @click.stop="store.toggleRowMark(row)">
+                  ⬤
+                </span>
+              </div>
+              <div class="cell" v-for="_, k2 in columns" :style="row.cells[k2].style as StyleValue || {}">
+                <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text || "&nbsp;" }}</div>
+              </div>
+              <div class="cell" v-if="store.correlationFilter" style="min-width: 50px;">
+                <div v-if="store.tracesRows[row.id] && store.tracesRows[row.id].id === row.id" class="trace-block"
+                  v-tooltip="store.tracesRows[row.id].label || ''" :style="{
+                    width: store.tracesRows[row.id].width / traceResolution + 'px',
+                    marginLeft: store.tracesRows[row.id].offset / traceResolution + 'px',
+                    ...store.tracesRows[row.id].style
+                  }">
+                  {{ store.tracesRows[row.id].label || '&nbsp' }}
+                </div>
+                <template v-else>-</template>
+              </div>
+            </div>
+          </div>
+        </div>
+          <table class="table" cellspacing="0" cellpadding="0" style="display:none">
             <tr>
               <th></th>
               <th v-for="col in columns" :style="{ width: col.width + 'px', cursor: 'auto' }" class="column-name">
@@ -669,7 +739,7 @@ const updateSampleLine = () => {
               <th v-if="store.correlationFilter">Trace
               </th>
             </tr>
-            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row in store.displayRows"
+            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row in rowsToDisplay"
               @click="store.openLogDrawer(row)" :style="(row.msg.style as StyleValue || {})">
               <td>
                 <span class="mark" :class="{ active: row.starred }" @click.stop="store.toggleRowMark(row)">

@@ -124,7 +124,7 @@
   
     .right-col {
       padding-left: 5px;
-      overflow: scroll;
+      // overflow: scroll;
       // overflow-x: hidden;
       width: 100%;
       height: calc(100%);
@@ -173,7 +173,6 @@
         td,
         th {
           padding: 1px 2px;
-  
         }
   
         .column-name {
@@ -222,8 +221,7 @@
             }
           }
         }
-  
-  
+
         tr.row.opened {
           background-color: var(--hl-bg);
           opacity: 0.8;
