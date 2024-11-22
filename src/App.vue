@@ -206,6 +206,7 @@ const addMessages = (msgs: Message[]): Message[] => {
     if (store.stickedToBottom) {
       stickToBottom()
     }
+    updateRowsToDisplay()
   }, 10)
 
   return msgs
@@ -500,15 +501,36 @@ onMounted(async () => {
 
 
   initKeyEventListeners()
-
+  
   table.value?.addEventListener("scroll", () => {
     if (!shouldStickToBottom()) {
       store.stickedToBottom = false
     } else {
       store.stickedToBottom = true
     }
+    tableScrollTop.value = table.value?.scrollTop || 0
+    updateRowsToDisplay()
   })
 })
+
+const tableScrollTop = ref<number>(0)
+const rowsToDisplay = ref<Row[]>([])
+const updateRowsToDisplay = ()=>{
+let idx = 0
+  if(tableScrollTop.value > 0){
+    idx = Math.floor(tableScrollTop.value/20)
+  }
+console.log("UPDATE", idx)
+  rowsToDisplay.value = store.displayRows.slice(idx, idx+50).map((r,k) => {
+    r.msg.style = {
+      ...r.msg.style||{},
+      position: 'absolute',
+      // height:'20px',
+      marginTop:((idx*20)+(k*20)).toString()+'px'
+    }
+    return r
+  })
+}
 
 const postAuth = () => {
   store.modalShow = ""
@@ -654,9 +676,10 @@ const updateSampleLine = () => {
             <template v-else>Sticked</template>
           </div>
           <table class="table" cellspacing="0" cellpadding="0">
+            <thead>
             <tr>
               <th></th>
-              <th v-for="col in columns" :style="{ width: col.width + 'px', cursor: 'auto' }" class="column-name">
+              <th v-for="col in columns" :style="{ width: col.width + 'px', cursor: 'auto'}" class="column-name">
                 <span style="cursor: auto;">{{ col.name }}</span>
                 <div class="hide-icon"
                   style="height: 12px; width: 12px; display: inline; visibility: hidden; opacity: 0.4; cursor: pointer; margin-left: 3px;"
@@ -669,7 +692,9 @@ const updateSampleLine = () => {
               <th v-if="store.correlationFilter">Trace
               </th>
             </tr>
-            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row in store.displayRows"
+          </thead>
+            <tbody style="position:relative" :style="{'height': (store.displayRows.length*20)+'px'}">
+            <tr class="row" :class="{ opened: row.opened, open: row.open }" v-for="row in rowsToDisplay"
               @click="store.openLogDrawer(row)" :style="(row.msg.style as StyleValue || {})">
               <td>
                 <span class="mark" :class="{ active: row.starred }" @click.stop="store.toggleRowMark(row)">
@@ -691,6 +716,7 @@ const updateSampleLine = () => {
                 <template v-else>-</template>
               </td>
             </tr>
+          </tbody>
           </table>
         </template>
       </div>
