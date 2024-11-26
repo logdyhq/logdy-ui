@@ -252,7 +252,21 @@ export const useMainStore = defineStore("main", () => {
         }
     }
 
+    const searchbarValid = computed(() => {
+        try {
+            new RegExp(searchbar.value, 'i')
+            return ''
+        } catch (e) {
+            return (e as any).message
+        }
+    })
+
     const displayRows = computed(() => {
+
+        if (searchbarValid.value.length > 0) {
+            return []
+        }
+
         const selectedFacets: Record<string, string[]> = {}
         for (let i in facets.value) {
             facets.value[i].items.forEach(el => {
@@ -312,7 +326,6 @@ export const useMainStore = defineStore("main", () => {
             if (searchbar.value.length < 3) {
                 return true
             }
-
             return (r.msg.content || "").search(new RegExp(searchbar.value, 'i')) >= 0
         })
     })
@@ -365,6 +378,7 @@ export const useMainStore = defineStore("main", () => {
 
         facets,
         searchbar,
+        searchbarValid,
 
         toggleRowMark
     };

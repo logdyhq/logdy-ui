@@ -4,6 +4,5 @@ export function formatThousands(x: number): string {
 
 export function getUrlParam(url: string, param: string): string | null {
     let params = new URLSearchParams(url)
-    console.log(params, url)
     return params.get(param)
 }
