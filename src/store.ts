@@ -5,7 +5,7 @@ import { FacetValues, Message, Row, TraceRow } from "./types";
 import { Layout } from "./config";
 import { useFilterStore } from "./stores/filter";
 import { client } from "./api";
-import { formatThousands } from "./utils";
+import { formatThousands, getUrlParam } from "./utils";
 
 export interface Notification {
     id?: string;
@@ -36,7 +36,7 @@ export const useMainStore = defineStore("main", () => {
 
     const demoMode = ref<boolean>(
         document.location.host.indexOf('demo.logdy.dev') >= 0 ||
-        document.location.search.indexOf('demo') >= 0
+        !!getUrlParam(document.location.search, 'demo_mode')
     )
     const demoStatus = ref<"started" | "stopped">("started")
     const demoContent = ref<"json" | "string">("json")
