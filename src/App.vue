@@ -47,7 +47,7 @@ const changeTraceResolution = (delta: number) => {
 }
 
 const leftColHidden = ref<boolean>(false)
-const version = __APP_VERSION__
+console.log("Logdy version", __APP_VERSION__)
 
 storageLogs.startClearingUnknowns()
 
@@ -577,9 +577,6 @@ const updateSampleLine = () => {
       <div class="left">
         <div class="logo">
           <a href="https://logdy.dev" target="_blank"><img src="/logdy-transparent.png" /></a>
-        </div>
-        <div>
-          <span style="font-size: 11px; opacity: 0.6;">v{{ version }}</span>
         </div>
         <div class="docs link-style">
           <a href="https://logdy.dev/docs/quick-start" target="_blank">Docs
