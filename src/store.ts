@@ -252,6 +252,10 @@ export const useMainStore = defineStore("main", () => {
         }
     }
 
+    const searchClear = () => {
+        searchbar.value = ""
+    }
+
     const searchbarValid = computed(() => {
         try {
             new RegExp(searchbar.value, 'i')
@@ -379,6 +383,7 @@ export const useMainStore = defineStore("main", () => {
         facets,
         searchbar,
         searchbarValid,
+        searchClear,
 
         toggleRowMark
     };

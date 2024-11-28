@@ -589,6 +589,7 @@ const updateSampleLine = () => {
       <div class="right">
         <input type="text" class="searchbar" v-model="store.searchbar" placeholder="Search logs..." />
         <br />
+        <button class="btn clear" @click="store.searchClear">Clear</button>
         <span class="search-error" v-if="store.searchbarValid.length > 0">Invalid search query: {{ store.searchbarValid
           }}</span>
       </div>
