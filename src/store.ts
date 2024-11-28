@@ -6,6 +6,7 @@ import { Layout } from "./config";
 import { useFilterStore } from "./stores/filter";
 import { client } from "./api";
 import { formatThousands, getUrlParam } from "./utils";
+import { SortPropName } from "./components/Facet.vue";
 
 export interface Notification {
     id?: string;
@@ -58,6 +59,7 @@ export const useMainStore = defineStore("main", () => {
     const settingsDrawer = ref<boolean>(false)
     const correlationFilter = ref<string>("")
     const tracesRows = ref<Record<string, TraceRow>>({})
+    const facetSort = ref<SortPropName>("label")
 
     const initSettings = ref<InitSettings>()
 
@@ -385,6 +387,7 @@ export const useMainStore = defineStore("main", () => {
         searchbarValid,
         searchClear,
 
-        toggleRowMark
+        toggleRowMark,
+        facetSort
     };
 });

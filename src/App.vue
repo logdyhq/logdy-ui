@@ -625,9 +625,15 @@ const updateSampleLine = () => {
                 <button class="btn-sm" style="margin-top:4px" @click="store.resetCorrelationFilter()">Reset correlation
                   filter</button>
               </div>
+              <br />
+              <span class="sort-label">Sort facets </span>
+              <button class="btn-sm" @click="store.facetSort = 'label'"
+                :disabled="store.facetSort === 'label'">Label</button>
+              <button class="btn-sm" @click="store.facetSort = 'count'"
+                :disabled="store.facetSort === 'count'">Count</button>
             </div>
             <Filter />
-            <FacetComponent :facets="store.facets" />
+            <FacetComponent :facets="store.facets" :sort="store.facetSort" />
           </template>
         </div>
       </div>

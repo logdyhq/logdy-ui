@@ -1,9 +1,10 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { FacetCollection, FacetValues } from '../types';
+import { computed, ref } from 'vue';
+import { FacetCollection, FacetItem, FacetValues } from '../types';
 
 const props = defineProps<{
-    facets: FacetValues
+    facets: FacetValues,
+    sort: SortPropName
 }>()
 
 const toggleAll = (f: FacetCollection) => {
@@ -20,6 +21,12 @@ const facetsSorted = computed(() => {
         return v
     })
 })
+
+export type SortPropName = 'count' | 'label'
+const facetItemsSorted = (items: FacetItem[], sortBy: SortPropName) => {
+    let dir = sortBy === 'count' ? -1 : 1
+    return items.sort((a, b) => a[sortBy] > b[sortBy] ? 1 * dir : -1 * dir)
+}
 
 const formatNumber = (num: number): string => {
     return Intl.NumberFormat('en-US', {
@@ -40,7 +47,7 @@ const formatNumber = (num: number): string => {
             <span class="facet-toggle" @click="toggleAll(f)">All</span>
         </div>
         <div v-if="f.toggled" class="facet-items">
-            <div v-for="l in f.items" class="facet-item" @click="l.selected = !l.selected"
+            <div v-for="l in facetItemsSorted(f.items, props.sort)" class="facet-item" @click="l.selected = !l.selected"
                 :class="{ 'facet-selected': l.selected }">
                 <div class="facet-label" :title="l.label">{{ l.label }}</div>
                 <div class="facet-val" :title="l.count.toString()">{{ formatNumber(l.count) }}</div>
