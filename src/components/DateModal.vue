@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import moment, { DurationInputArg2 } from 'moment';
-import { onMounted, Ref, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useMainStore } from '../store';
 
 const emit = defineEmits<{
