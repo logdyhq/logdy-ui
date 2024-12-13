@@ -16,7 +16,8 @@ defineEmits<{
         <button @click="$emit('stop')" :disabled="useMainStore().demoStatus === 'stopped'">Stop</button>
         <button @click="$emit('add')">Add 100 messages</button>
         <button @click="$emit('mode', 'json')" :disabled="useMainStore().demoContent === 'json'">Produce JSON</button>
-        <button @click="$emit('mode', 'string')" :disabled="useMainStore().demoContent === 'string'">Produce string</button>
+        <button @click="$emit('mode', 'string')" :disabled="useMainStore().demoContent === 'string'">Produce
+            string</button>
     </div>
 </template>
 
@@ -27,7 +28,7 @@ defineEmits<{
     }
 
     .layout {
-        height: calc(100vh - 116px) !important;
+        height: calc(100vh - 109px) !important;
     }
 }
 

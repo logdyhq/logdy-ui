@@ -119,6 +119,10 @@ const copyToClipboard = (value: string) => {
                     <pre><code>{{ row.msg.origin?.file }}</code></pre>
                 </div>
             </div>
+            <div style="margin-bottom: 80px;">
+                <!-- It's a spacer div, leave it here -->
+                &nbsp;
+            </div>
         </div>
     </div>
 </template>
@@ -127,10 +131,10 @@ const copyToClipboard = (value: string) => {
 .drawer {
     right: 0;
     top: 0;
-    height: calc(100vh - 120px);
+    height: 100%;
     background: var(--hl-bg);
     z-index: 999;
-    opacity: 0.97;
+    opacity: 0.99;
     padding: 10px;
     padding-left: 0px;
     padding-top: 0;
@@ -163,8 +167,9 @@ const copyToClipboard = (value: string) => {
 
     .inner-drawer {
         padding-top: 20px;
-        height: calc(100% - 15px);
+        height: 100%;
         overflow-y: scroll;
+        padding-bottom: 20px;
 
 
         .header {

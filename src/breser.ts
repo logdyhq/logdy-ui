@@ -3,7 +3,7 @@
 export const BreserInit = async () => {
     //@ts-expect-error
     const go = new Go();
-    const result = await WebAssembly.instantiateStreaming(fetch("/public/main.wasm"), go.importObject)
+    const result = await WebAssembly.instantiateStreaming(fetch("/main.wasm"), go.importObject)
     go.run(result.instance)
 }
 
