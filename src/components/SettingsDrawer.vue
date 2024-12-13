@@ -13,6 +13,9 @@ import { LIB_ES5_CORE_LIB } from "../lib_es2015_core";
 import { useMainStore } from "../store";
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
+import { themeHandler } from "../theme.ts";
+import Sun from "./icon/Sun.vue";
+import Moon from "./icon/Moon.vue";
 
 self.MonacoEnvironment = {
     getWorker: function (_, label) {
@@ -178,7 +181,7 @@ const settingsChanged = ref<boolean>(false)
 let selectedColumn = ref<Column>()
 let sampleLineVisible = ref<boolean>(true)
 let selectedMiddleware = ref<Middleware>()
-let settings = ref<Settings>({ leftColWidth: 200, drawerColWidth: 900, maxMessages: 1000, middlewares: [] })
+let settings = ref<Settings>({ leftColWidth: 200, drawerColWidth: 900, maxMessages: 1000, middlewares: [], entriesOrder: "desc" })
 
 const props = defineProps<{
     layout: Layout,
@@ -228,6 +231,9 @@ onMounted(() => {
     cancelSettings()
 
     watch(() => settings.value.maxMessages, () => {
+        settingsChanged.value = true
+    })
+    watch(() => settings.value.entriesOrder, () => {
         settingsChanged.value = true
     })
     watch(() => settings.value.middlewares, () => {
@@ -402,6 +408,10 @@ const addMiddleware = () => {
     <div class="drawer">
         <div class="inner-drawer">
             <div class="header">
+                <button class="btn" style="padding:0.6em; margin-right:3px;" @click="themeHandler.toggleTheme()">
+                    <Sun v-if="themeHandler.theme.value === 'dark'" />
+                    <Moon v-if="themeHandler.theme.value === 'light'" />
+                </button>
                 <button @click="$emit('close')">Close</button>
             </div>
 
@@ -409,11 +419,20 @@ const addMiddleware = () => {
                 <h2>Settings
                     <button class="btn-sm" @click="useMainStore().modalShow = 'import'">Export / import</button>
                 </h2>
-                <div>Maximum number of log messages stored in the browser</div>
-                <div>
-                    <input class="input" v-model="settings.maxMessages" type="number" />
+                <div class="block">
+                    Order of entries
+                    <button class="btn-sm" :disabled="settings.entriesOrder === 'desc'"
+                        @click="settings.entriesOrder = 'desc'">Newest at the top</button>
+                    <button class="btn-sm" :disabled="settings.entriesOrder === 'asc'"
+                        @click="settings.entriesOrder = 'asc'">Newest at the bottom</button>
                 </div>
-                <div style="margin-top: 10px">
+                <div class="block">
+                    <div>Maximum number of log messages stored in the browser</div>
+                    <div>
+                        <input class="input" v-model="settings.maxMessages" type="number" />
+                    </div>
+                </div>
+                <div class="block" style="margin-top: 10px">
                     <span>Middlewares <button class="btn-sm" @click="addMiddleware">Add</button></span>
                     <div v-for="m in settings.middlewares" style="margin:10px 0">
                         {{ m.name }}
@@ -546,6 +565,12 @@ hr {
             button {
                 margin-right: 5px;
             }
+        }
+
+        .block {
+            border-bottom: 1px solid rgba(255, 255, 255, .1);
+            padding-bottom: 8px;
+            margin-bottom: 8px;
         }
     }
 

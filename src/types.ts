@@ -3,6 +3,7 @@ export type ConnectionStatus = "connected" | "not connected"
 
 export type Settings = {
     maxMessages: number,
+    entriesOrder: "asc" | "desc",
     leftColWidth: number,
     drawerColWidth: number,
     middlewares: Middleware[]

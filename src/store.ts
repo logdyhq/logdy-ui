@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { storageApp, storageLogs } from "./storage";
 import { FacetValues, Message, Row, TraceRow } from "./types";
 import { Layout } from "./config";
@@ -7,6 +7,8 @@ import { useFilterStore } from "./stores/filter";
 import { client } from "./api";
 import { formatThousands, getUrlParam } from "./utils";
 import { SortPropName } from "./components/Facet.vue";
+import { BreserFilterData, BreserSetQuery } from "./breser";
+import moment from "moment";
 
 export interface Notification {
     id?: string;
@@ -42,6 +44,10 @@ export const useMainStore = defineStore("main", () => {
     const demoStatus = ref<"started" | "stopped">("started")
     const demoContent = ref<"json" | "string">("json")
 
+    const breserQuery = ref<string>("")
+    const breserQueryError = ref<string>("")
+    const datepicker = ref<{ from: number, to: number }>({ from: 0, to: 0 })
+
     const confirmMsg = ref<string>("");
     const confirmShow = ref<boolean>(false);
 
@@ -68,7 +74,7 @@ export const useMainStore = defineStore("main", () => {
         idx?: number
     }>({})
 
-    const layout = ref<Layout>(new Layout('main', { leftColWidth: 300, drawerColWidth: 900, maxMessages: 1000, middlewares: [] }))
+    const layout = ref<Layout>(new Layout('main', { leftColWidth: 300, drawerColWidth: 900, maxMessages: 1000, middlewares: [], entriesOrder: 'desc' }))
 
     let confirmFn: (() => void) | null = null;
 
@@ -100,6 +106,28 @@ export const useMainStore = defineStore("main", () => {
         confirmMsg.value = ""
         confirmShow.value = false
     }
+
+    const datepickerLabel = computed(() => {
+        if (datepicker.value.from <= 0 && datepicker.value.to <= 0) {
+            return 'Set timeframe'
+        }
+
+        let from = moment(datepicker.value.from * 1000)
+        let to = moment(datepicker.value.to * 1000)
+
+        let start = from.format('MMM DD, HH:mmA')
+        let until = from.format('MMM DD, HH:mmA')
+
+        if (from.format('DD-MM-YYYY') === to.format('DD-MM-YYYY')) {
+            start = from.format('MMM DD, HH:mmA')
+            until = to.format('HH:mmA')
+        }
+        if (datepicker.value.to === 0) {
+            until = 'now'
+        }
+
+        return `${start} - ${until}`
+    })
 
     const openLogDrawer = (row: Row, delta: number = 0) => {
         closeLogDrawer()
@@ -258,12 +286,20 @@ export const useMainStore = defineStore("main", () => {
         searchbar.value = ""
     }
 
+    const isRecordJson = computed(() => {
+        return rows.value[0] && rows.value[0].msg.is_json == true
+    })
+
     const searchbarValid = computed(() => {
-        try {
-            new RegExp(searchbar.value, 'i')
-            return ''
-        } catch (e) {
-            return (e as any).message
+        if (isRecordJson.value) {
+            return breserQueryError.value
+        } else {
+            try {
+                new RegExp(searchbar.value, 'i')
+                return ''
+            } catch (e) {
+                return (e as any).message
+            }
         }
     })
 
@@ -290,7 +326,18 @@ export const useMainStore = defineStore("main", () => {
         let portOriginFilter = filters.filter(f => f.startsWith('origin_port_')).length > 0
         let naOriginFilter = filters.filter(f => f.startsWith('origin_na')).length > 0
         let originFilter = filters.filter(f => f.startsWith('origin_')).length > 0
-        return rows.value.filter((r) => {
+
+        let response = rows.value.filter(m => {
+            let unixMessageTime = m.msg.ts / 1000
+            if (datepicker.value.from > 0 && unixMessageTime < datepicker.value.from) {
+                return false
+            }
+
+            if (datepicker.value.to > 0 && unixMessageTime > datepicker.value.to) {
+                return false
+            }
+            return true
+        }).filter((r) => {
 
             if (correlationFilter.value && correlationFilter.value != r.msg.correlation_id) {
                 return false;
@@ -329,11 +376,61 @@ export const useMainStore = defineStore("main", () => {
             })
             return cnt === 0
         }).filter(r => {
+            if (breserQuery.value.length > 0) {
+                return true
+            }
             if (searchbar.value.length < 3) {
                 return true
             }
             return (r.msg.content || "").search(new RegExp(searchbar.value, 'i')) >= 0
         })
+
+        if (isRecordJson && breserQuery.value.length > 0) {
+            let res = BreserFilterData(response.map(m => {
+                return {
+                    data: m.msg.json_content,
+                    raw: m.msg.content,
+                    ts: m.msg.ts,
+                    origin: m.msg.origin
+                }
+            }).filter(m => m))
+            if (!res.result || res.result.length != response.length) {
+                return response
+            }
+            if (res && res.error) {
+                breserQueryError.value = res.error
+                return response
+            }
+            return response.filter((_, i) => {
+                return res.result[i]
+            })
+        }
+
+        if (layout.value.settings.entriesOrder === 'desc') {
+            return response.reverse()
+        } else {
+            return response
+        }
+    })
+
+    watch(searchbar, (newVal) => {
+        if (!isRecordJson.value) {
+            return
+        }
+        breserQueryError.value = ""
+
+        if (!newVal.length) {
+            breserQuery.value = ""
+            return
+        }
+
+        let error = BreserSetQuery(newVal)
+        if (error) {
+            breserQueryError.value = error
+            return
+        }
+
+        breserQuery.value = newVal
     })
 
     return {
@@ -388,6 +485,9 @@ export const useMainStore = defineStore("main", () => {
         searchClear,
 
         toggleRowMark,
-        facetSort
+        facetSort,
+
+        datepicker,
+        datepickerLabel
     };
 });

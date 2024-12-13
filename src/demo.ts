@@ -32,7 +32,7 @@ export function getLayout(json: boolean = true): Layout {
         })
     }
 
-    let l = new Layout("demo", { maxMessages: 1000, leftColWidth: 300, drawerColWidth: 900, middlewares })
+    let l = new Layout("demo", { maxMessages: 1000, leftColWidth: 300, drawerColWidth: 900, middlewares, entriesOrder: "desc" })
 
     if (!json) {
         l.add({
@@ -52,7 +52,7 @@ export function getLayout(json: boolean = true): Layout {
         id: "",
         name: "ts",
         handlerTsCode: `(line: Message): CellHandler => {
-            return { text: moment().format('DD-MM hh:mm:ss.SSS') }
+            return { text: moment().format('DD-MM HH:mm:ss.SSS') }
         }`
     })
 

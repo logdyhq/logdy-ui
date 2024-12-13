@@ -71,7 +71,11 @@
       }
       
       .clear{
-        margin-left:10px;
+        margin-left:0px;
+        padding: 5px 7px;
+        border-top-left-radius: 0;
+        background: rgba(255,255,255, .1) !important;
+        border-bottom-left-radius: 0;
       }
     }
   
@@ -83,7 +87,7 @@
       .ctrls {
         margin-right: 5px;
         .ctrl-btn{
-          padding: 8px;
+          padding: 3px 8px;
           border-radius: 0;
           &:first-child{
             border-top-left-radius: 8px;
@@ -123,6 +127,7 @@
   
       overflow: auto;
       overflow-x: hidden;
+      margin-left: 4px;
       min-width: 180px;
       border-right: 1px solid var(--hl-bg);
       padding-right: 5px;

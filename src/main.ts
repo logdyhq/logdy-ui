@@ -7,11 +7,14 @@ import "./app.scss"
 import 'floating-vue/dist/style.css'
 import FloatingVue from 'floating-vue'
 import { themeHandler } from './theme'
+import { BreserInit } from './breser'
 
 window.moment = moment
 window.document.title = 'Logdy'
 
-themeHandler.initTheme()
+themeHandler.initTheme();
+
+BreserInit()
 
 createApp(App)
     .use(createPinia())

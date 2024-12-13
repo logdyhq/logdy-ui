@@ -28,6 +28,7 @@ import { initKeyEventListeners } from "./key_events"
 import loadAnalytics from './analytics';
 import { client } from "./api"
 import TopBar from "./components/TopBar.vue"
+import Close from './components/icon/Close.vue';
 
 const store = useMainStore()
 const storeFilter = useFilterStore()
@@ -37,6 +38,7 @@ const table = ref<HTMLElement>()
 const columns = ref<Column[]>([])
 const sampleLineIndex = ref<number>(0)
 const traceResolution = ref<number>(20)
+const searchbar = ref<string>("")
 
 const changeTraceResolution = (delta: number) => {
   if (traceResolution.value + delta <= 0) {
@@ -445,33 +447,55 @@ const renderDemoMode = () => {
 const addDemoData = (count: number = 1) => {
   let isJson = store.demoContent === 'json'
 
-  let rand = Math.random()
-  let origin = {
-    port: "",
-    file: "",
-    api_source: ""
-  }
-  if (rand < 0.50) {
-    origin.port = "8123"
-    origin.file = "foo.log"
-  } else {
-    origin.port = "8999"
-    origin.file = "foo/bar.log"
-  }
-
   while (count--) {
+    let rand = Math.random()
+    let origin = {
+      port: "",
+      file: "",
+      api_source: ""
+    }
+
+    if (rand <= 0.1) {
+      storeFilter.changeFilter('origin_na', 1)
+    }
+    if (rand > 0.1 && rand <= 0.25) {
+      origin.file = "foo/bar.log"
+      storeFilter.changeFilter('origin_file_' + origin.file, 1)
+    }
+    if (rand > 0.25 && rand <= 0.5) {
+      origin.port = "8999"
+      storeFilter.changeFilter('origin_port_' + origin.port, 1)
+    }
+    if (rand > 0.5 && rand <= 0.75) {
+      origin.file = "foo.log"
+      storeFilter.changeFilter('origin_file_' + origin.file, 1)
+    }
+    if (rand > 0.75) {
+      origin.port = "8123"
+      storeFilter.changeFilter('origin_port_' + origin.port, 1)
+    }
     let data = demo.generateData(isJson)
     tryAddMessage([{
-      id: new Date().getTime().toString(),
+      id: new Date().getTime().toString() + Math.random(),
       content: isJson ? JSON.stringify(data) : data as string,
-      is_json: true,
+      is_json: isJson,
       log_type: 0,
       json_content: isJson ? data : null,
       origin,
       ts: new Date().getTime(),
     }], store.layout.settings)
     storeFilter.changeFilter('unread', 1);
+
   }
+}
+
+const updateSearchbar = () => {
+  store.searchbar = searchbar.value
+}
+
+const clearSearchbar = () => {
+  store.searchClear()
+  searchbar.value = ""
 }
 
 watch(() => store.initSettings?.received, (newVal?: boolean) => {
@@ -587,15 +611,24 @@ const updateSampleLine = () => {
         </div>
       </div>
       <div class="right">
-        <input type="text" class="searchbar" v-model="store.searchbar" placeholder="Search logs..." />
-        <br />
-        <button class="btn clear" @click="store.searchClear">Clear</button>
+        <input type="text" class="searchbar" id="searchbar-query" v-model="searchbar" @keyup.enter="updateSearchbar"
+          placeholder="Type query, then hit 'Enter' (powered by breser.dev)" />
+        <!-- <button class="btn clear" @click="updateSearchbar" style="display: flex;align-items: center;">
+          Search
+          <CornerRightDown
+            style="margin-left: 5px; border:1px solid white; border-radius: 2px; padding: 2px; height: 10px; width:10px" />
+        </button> -->
+        <button class="btn clear" @click="clearSearchbar">
+          <Close />
+        </button>
         <span class="search-error" v-if="store.searchbarValid.length > 0">Invalid search query: {{ store.searchbarValid
-          }}</span>
+          }}.
+          <br />
+          <a href="https://logdy.dev/docs" target="_blank">Visit docs</a>
+        </span>
       </div>
       <div class="end">
         <TopBar />
-
       </div>
     </div>
     <div class="layout" @mouseup="endDragging">

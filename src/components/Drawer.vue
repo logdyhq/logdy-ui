@@ -52,7 +52,7 @@ const copyToClipboard = (value: string) => {
             <h3>Table columns</h3>
             <div v-for="col, k in layout?.columns.filter(c => !c.hidden)">
                 <h4 v-tooltip="'Click to copy'" style="display: inline;" @click="copyToClipboard(row.cells[k].text)">{{
-        col.name }}
+                    col.name }}
                     <Clipboard :class="'clipboard'" />
                 </h4>
                 <pre v-if="row.cells[k] && !row.cells[k].isJson">{{ row.cells[k].text }}</pre>
@@ -62,7 +62,7 @@ const copyToClipboard = (value: string) => {
             <h3>Non-table fields</h3>
             <div v-for="col, k in layout?.columns.filter(c => c.hidden)">
                 <h4 v-tooltip="'Click to copy'" style="display: inline;" @click="copyToClipboard(row.fields[k].text)">{{
-        col.name }}
+                    col.name }}
                     <Clipboard :class="'clipboard'" />
                 </h4>
                 <pre v-if="!row.fields[k].isJson">{{ row.fields[k].text }}</pre>
@@ -127,7 +127,7 @@ const copyToClipboard = (value: string) => {
 .drawer {
     right: 0;
     top: 0;
-    height: calc(100vh - 73px);
+    height: calc(100vh - 120px);
     background: var(--hl-bg);
     z-index: 999;
     opacity: 0.97;
