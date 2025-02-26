@@ -1,5 +1,30 @@
 @use "sass:meta";
 
+/* roboto-mono-300 - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 300;
+  src: url('../fonts/roboto-mono-v23-latin-300.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+/* roboto-mono-regular - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/roboto-mono-v23-latin-regular.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+/* roboto-mono-700 - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 700;
+  src: url('../fonts/roboto-mono-v23-latin-700.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
 .top-bar {
     height: 50px;
     display: flex;
@@ -46,7 +71,7 @@
       align-items: center;
   
       .searchbar {
-        font-family: 'Roboto mono', sans-serif;
+        font-family: 'Roboto mono', monospace;
         font-size: 12px;
         padding: 5px;
         width: 100%;
@@ -58,7 +83,7 @@
       }
       
       .search-error {
-        font-family: 'Roboto mono', sans-serif;
+        font-family: 'Roboto mono', monospace;
         font-size: 12px;
         padding: 5px;
         background: var(--hl-bg);
