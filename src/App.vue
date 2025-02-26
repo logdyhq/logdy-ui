@@ -536,7 +536,9 @@ onMounted(async () => {
 const postAuth = () => {
   store.modalShow = ""
   connectToWs()
-  loadAnalytics(false)
+  if (store.initSettings?.analyticsEnabled) {
+    loadAnalytics(false)
+  }
   loadConfig()
 }
 
@@ -622,7 +624,7 @@ const updateSampleLine = () => {
           <Close />
         </button>
         <span class="search-error" v-if="store.searchbarValid.length > 0">Invalid search query: {{ store.searchbarValid
-          }}.
+        }}.
           <br />
           <a href="https://logdy.dev/docs" target="_blank">Visit docs</a>
         </span>
