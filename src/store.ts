@@ -25,6 +25,16 @@ export interface InitSettings {
 
     // this will hold a Layout JSON to load from the backend
     configStr: string;
+
+    updateVersion: {
+        checked: boolean;
+        local_version: string;
+        current_version: string;
+        current_version_published: string;
+        download_link: string;
+        blog_link: string;
+        excerpt: string;
+    }
 }
 
 type ReceiveStatus = "paused" | "following" | "following_cursor"
@@ -413,6 +423,22 @@ export const useMainStore = defineStore("main", () => {
         }
     })
 
+    const getUpdate = () => {
+        return initSettings.value?.updateVersion
+    }
+
+    const notificationBar = computed(() => {
+
+        return false // for until its finished
+
+        // if (!initSettings.value) {
+        //     return false
+        // }
+
+        // return initSettings.value?.updateVersion.checked &&
+        //     initSettings.value.updateVersion.current_version != initSettings.value.updateVersion.local_version
+    })
+
     watch(searchbar, (newVal) => {
         if (!isRecordJson.value) {
             return
@@ -444,6 +470,9 @@ export const useMainStore = defineStore("main", () => {
         demoContent,
         status,
         statusStr,
+
+        notificationBar,
+        getUpdate,
 
         receiveStatus,
         receiveCounters,

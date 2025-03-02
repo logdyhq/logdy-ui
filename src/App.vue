@@ -10,6 +10,7 @@ import Filter from "./components/Filter.vue"
 import Modal from "./components/Modal.vue"
 import AuthPrompt from "./components/AuthPrompt.vue"
 import DemoBar from "./components/DemoBar.vue"
+import UpdateBar from "./components/UpdateBar.vue"
 import Confirm from "./components/ConfirmModal.vue"
 import FeedbackModal from "./components/FeedbackModal.vue"
 import Import from "./components/Import.vue"
@@ -595,9 +596,10 @@ const updateSampleLine = () => {
   <SettingsDrawer v-if="store.settingsDrawer" @close="store.settingsDrawer = false" :layout="(store.layout as Layout)"
     @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
     @update-sample-line="updateSampleLine" :sampleLine="sampleLine" />
+  <UpdateBar v-if="store.notificationBar" />
   <DemoBar v-if="store.demoMode" @start="store.demoStatus = 'started'" @stop="store.demoStatus = 'stopped'"
     @mode="changeDemoMode" @add="addDemoData(100)" />
-  <div :class="{ 'demo': store.demoMode }">
+  <div :class="{ 'demo': store.demoMode, 'update': store.notificationBar }">
     <div class="top-bar">
       <div class="left">
         <div class="logo">
