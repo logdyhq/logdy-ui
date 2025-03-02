@@ -624,7 +624,7 @@ const updateSampleLine = () => {
           <Close />
         </button>
         <span class="search-error" v-if="store.searchbarValid.length > 0">Invalid search query: {{ store.searchbarValid
-        }}.
+          }}.
           <br />
           <a href="https://logdy.dev/docs" target="_blank">Visit docs</a>
         </span>
@@ -718,7 +718,10 @@ const updateSampleLine = () => {
                 </span>
               </td>
               <td class="cell" v-for="_, k2 in columns" :style="row.cells[k2].style as StyleValue || {}">
-                <div :style="{ width: columns[k2].width + 'px' }">{{ row.cells[k2].text || "&nbsp;" }}</div>
+                <div :style="{ width: columns[k2].width + 'px' }" v-if="row.cells[k2].allowHtmlInText"
+                  v-html="row.cells[k2].text || '&nbsp;'"></div>
+                <div :style="{ width: columns[k2].width + 'px' }" v-else>{{ row.cells[k2].text || "&nbsp;" }}</div>
+
               </td>
               <td class="cell" v-if="store.correlationFilter" style="min-width: 50px;">
                 <div v-if="store.tracesRows[row.id] && store.tracesRows[row.id].id === row.id" class="trace-block"

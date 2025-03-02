@@ -132,9 +132,14 @@ export type CellHandler = {
     /**
      * A list of Facets that for a particular line
      */
-    facets?: Facet[]
+    facets?: Facet[],
+    /**
+     * Whether 'text' is allowed to contain HTML tags.
+     * Setting it to 'true' is danger since the string will be interpreted as HTML
+     * and opens a vulnerability for XSS attacks.
+     */
+    allowHtmlInText?: boolean
 }
-
 
 export type Facet = {
     /**
