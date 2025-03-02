@@ -47,8 +47,13 @@ const formatNumber = (num: number): string => {
             <span class="facet-toggle" @click="toggleAll(f)">All</span>
         </div>
         <div v-if="f.toggled" class="facet-items">
-            <div v-for="l in facetItemsSorted(f.items, props.sort)" class="facet-item" @click="l.selected = !l.selected"
-                :class="{ 'facet-selected': l.selected }">
+            <div v-for="l in facetItemsSorted(f.items, props.sort).filter(f => f.selected)" class="facet-item"
+                @click="l.selected = !l.selected" :class="{ 'facet-selected': l.selected }">
+                <div class="facet-label" :title="l.label">{{ l.label }}</div>
+                <div class="facet-val" :title="l.count.toString()">{{ formatNumber(l.count) }}</div>
+            </div>
+            <div v-for="l in facetItemsSorted(f.items, props.sort).filter(f => !f.selected)" class="facet-item"
+                @click="l.selected = !l.selected" :class="{ 'facet-selected': l.selected }">
                 <div class="facet-label" :title="l.label">{{ l.label }}</div>
                 <div class="facet-val" :title="l.count.toString()">{{ formatNumber(l.count) }}</div>
             </div>
