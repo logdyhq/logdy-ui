@@ -45,23 +45,30 @@ export const useContextMenuStore = defineStore("context_menu", () => {
                         }
                     })
                 }
-                actions.value?.push({
-                    label: "Search by value",
-                    fn: () => {
-                        let v = type.value
-                        switch (typeof v) {
-                            case "string":
-                                v = `"${v}"`
-                                break
-                            case "number":
-                            case "boolean":
-                                v = `${v}`
-                                break
-                        }
-                        globalEventBus.emit('searchbar-update', `data.${column.name} == ${v}`)
-                        hide()
-                    }
-                })
+                /**
+                 * The feature of filtering by value is currently disabled due to the fact that 
+                 * we're unable to effectively trace the source field only by using name.
+                 * It requires a bigger change in functionality where we select a field to display in the column
+                 * by allowing to provide it as a string path ie. `field.foo.bar` would correspond to {field:{foo:{bar:"baz"}}}
+                 * In addition it should be taken into account when the object is flatten to {"field.foo.bar": "baz"}
+                 */
+                // actions.value?.push({
+                //     label: "Search by value",
+                //     fn: () => {
+                //         let v = type.value
+                //         switch (typeof v) {
+                //             case "string":
+                //                 v = `"${v}"`
+                //                 break
+                //             case "number":
+                //             case "boolean":
+                //                 v = `${v}`
+                //                 break
+                //         }
+                //         globalEventBus.emit('searchbar-update', `data.${column.name} == ${v}`)
+                //         hide()
+                //     }
+                // })
                 actions.value?.push({
                     label: "Copy value",
                     fn: () => {

@@ -228,6 +228,7 @@
         }
   
         .column-name {
+          z-index: 100;
           span {
             pointer-events: none;
             user-select: none;
