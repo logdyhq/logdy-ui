@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { useMainStore } from "../store";
-import { globalEventBus } from "../event_bus";
 
 interface Action {
     label: string
