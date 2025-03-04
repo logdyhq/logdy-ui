@@ -11,7 +11,9 @@ export function generateData(json: boolean, separator: string = " | "): object |
         level: Math.random() > 0.5 ? 'info' : 'error',
         ua: faker.internet.userAgent(),
         method: faker.internet.httpMethod(),
-        issuer: faker.finance.creditCardIssuer()
+        issuer: faker.finance.creditCardIssuer(),
+        duration: Math.round(Math.random() * 250),
+        active: Math.random() > 0.5
     }
 
     return json ? data : Object.values(data).join(separator)
@@ -60,12 +62,10 @@ export function getLayout(json: boolean = true): Layout {
         id: "1",
         name: "method",
         width: 100,
+        faceted: true,
         handlerTsCode: `(line: Message): CellHandler => {
             return { 
                 text: line.json_content.method, 
-                facets: [
-                    { name:"Method", value:line.json_content.method }
-                ] 
             }
         }`
     })
@@ -85,7 +85,7 @@ export function getLayout(json: boolean = true): Layout {
     l.add({
         id: "3",
         name: "domain",
-        width: 300,
+        width: 150,
         handlerTsCode: `(line: Message): CellHandler => {
             return { text: line.json_content.domain }
         }`
@@ -93,7 +93,7 @@ export function getLayout(json: boolean = true): Layout {
     l.add({
         id: "4",
         name: "ipv4",
-        width: 300,
+        width: 120,
         handlerTsCode: `(line: Message): CellHandler => {
             return { text: line.json_content.ipv4 }
         }`
@@ -107,15 +107,30 @@ export function getLayout(json: boolean = true): Layout {
         }`
     })
     l.add({
+        id: "8",
+        name: "duration",
+        width: 100,
+        handlerTsCode: `(line: Message): CellHandler => {
+            return { text: line.json_content.duration }
+        }`
+    })
+    l.add({
+        id: "9",
+        name: "active",
+        width: 100,
+        faceted: true,
+        handlerTsCode: `(line: Message): CellHandler => {
+            return { text: line.json_content.active }
+        }`
+    })
+    l.add({
         id: "6",
         name: "issuer",
         width: 300,
+        faceted: true,
         handlerTsCode: `(line: Message): CellHandler => {
             return { 
                 text: line.json_content.issuer,
-                facets: [{
-                    name: "Issuer", value: line.json_content.issuer
-                }]
              }
         }`
     })
