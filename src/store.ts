@@ -437,6 +437,17 @@ export const useMainStore = defineStore("main", () => {
         return false
     }
 
+    const clearFacet = (name: string) => {
+        for (let f in facets.value) {
+            if (facets.value[f].name !== name) {
+                continue
+            }
+            facets.value[f].items.forEach(f => {
+                f.selected = false
+            })
+        }
+    }
+
     const notificationBar = computed(() => {
 
         return false // for until its finished
@@ -520,6 +531,7 @@ export const useMainStore = defineStore("main", () => {
 
         facets,
         isFacetActive,
+        clearFacet,
         searchbar,
         searchbarValid,
         searchClear,

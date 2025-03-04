@@ -20,7 +20,9 @@ import DoubleRight from "./components/icon/DoubleRight.vue"
 import Flag from "./components/icon/Flag.vue"
 import ArrowRightUp from "./components/icon/ArrowRightUp.vue"
 import HideColumnIcon from "./components/HideColumnIcon.vue"
+import FilterIcon from "./components/icon/Filter.vue"
 import ExportLogs from "./components/ExportLogs.vue"
+import ContextMenu from "./components/ContextMenu.vue";
 import { useMainStore, InitSettings } from './store';
 import { useFilterStore } from "./stores/filter";
 import { startDragging, endDragging, startColumnDragging } from './dragging';
@@ -30,6 +32,8 @@ import loadAnalytics from './analytics';
 import { client } from "./api"
 import TopBar from "./components/TopBar.vue"
 import Close from './components/icon/Close.vue';
+import { useContextMenuStore } from './stores/contextMenu';
+import { globalEventBus } from './event_bus';
 
 const store = useMainStore()
 const storeFilter = useFilterStore()
@@ -494,6 +498,11 @@ const updateSearchbar = () => {
   store.searchbar = searchbar.value
 }
 
+globalEventBus.on('searchbar-update', (value: string) => {
+  store.searchbar = value
+  searchbar.value = value
+})
+
 const clearSearchbar = () => {
   store.searchClear()
   searchbar.value = ""
@@ -591,6 +600,7 @@ const updateSampleLine = () => {
     <LoadLogs v-if="store.modalShow == 'load-logs'" />
     <FeedbackModal v-if="store.modalShow == 'feedback'" />
   </Modal>
+  <ContextMenu v-if="useContextMenuStore().display" />
   <Confirm />
 
   <SettingsDrawer v-if="store.settingsDrawer" @close="store.settingsDrawer = false" :layout="(store.layout as Layout)"
@@ -699,8 +709,10 @@ const updateSampleLine = () => {
           <table class="table" cellspacing="0" cellpadding="0">
             <tr>
               <th></th>
-              <th v-for="col in columns" :style="{ width: col.width + 'px', cursor: 'auto' }" class="column-name">
+              <th v-for="col in columns" :style="{ width: col.width + 'px', cursor: 'auto' }" class="column-name"
+                @contextmenu.prevent="useContextMenuStore().show($event, { type: 'column_header', name: col.name })">
                 <span style="cursor: auto;">{{ col.name }}</span>
+                <FilterIcon v-if="col.faceted" :style="{ opacity: store.isFacetActive(col.name) ? 1 : 0.2 }" />
                 <div class="hide-icon"
                   style="height: 12px; width: 12px; display: inline; visibility: hidden; opacity: 0.4; cursor: pointer; margin-left: 3px;"
                   @click="hideColumn(col)">
@@ -719,10 +731,14 @@ const updateSampleLine = () => {
                   ⬤
                 </span>
               </td>
-              <td class="cell" v-for="_, k2 in columns" :style="row.cells[k2].style as StyleValue || {}">
+              <td class="cell" v-for="c, k2 in columns" :style="row.cells[k2].style as StyleValue || {}">
                 <div :style="{ width: columns[k2].width + 'px' }" v-if="row.cells[k2].allowHtmlInText"
-                  v-html="row.cells[k2].text || '&nbsp;'"></div>
-                <div :style="{ width: columns[k2].width + 'px' }" v-else>{{ row.cells[k2].text || "&nbsp;" }}</div>
+                  v-html="row.cells[k2].text !== undefined ? row.cells[k2].text : '&nbsp;'"
+                  @contextmenu.prevent="useContextMenuStore().show($event, { type: 'cell', value: row.cells[k2].text, columnId: c.id })">
+                </div>
+                <div :style="{ width: columns[k2].width + 'px' }"
+                  @contextmenu.prevent="useContextMenuStore().show($event, { type: 'cell', value: row.cells[k2].text, columnId: c.id })"
+                  v-else>{{ row.cells[k2].text !== undefined ? row.cells[k2].text : "&nbsp;" }}</div>
 
               </td>
               <td class="cell" v-if="store.correlationFilter" style="min-width: 50px;">
