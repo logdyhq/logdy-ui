@@ -427,6 +427,16 @@ export const useMainStore = defineStore("main", () => {
         return initSettings.value?.updateVersion
     }
 
+    const isFacetActive = (name: string) => {
+        for (let f in facets.value) {
+            if (facets.value[f].name !== name) {
+                continue
+            }
+            return facets.value[f].items.find(f => f.selected == true) != undefined
+        }
+        return false
+    }
+
     const notificationBar = computed(() => {
 
         return false // for until its finished
@@ -509,6 +519,7 @@ export const useMainStore = defineStore("main", () => {
         displayRows,
 
         facets,
+        isFacetActive,
         searchbar,
         searchbarValid,
         searchClear,

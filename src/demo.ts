@@ -77,7 +77,7 @@ export function getLayout(json: boolean = true): Layout {
             return { 
                 text: line.json_content.level,
                 facets: [
-                    { name:"Level", value:line.json_content.level }
+                    { name:"Custom facet", value:line.json_content.level.substr(0,3) }
                 ] 
             }
         }`
