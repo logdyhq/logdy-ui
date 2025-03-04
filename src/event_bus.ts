@@ -5,10 +5,10 @@ type EventCallback = (...args: any[]) => void
 type EventDefinition = Record<string, any[]>
 
 // Generic event bus creator function - similar to defineEmits pattern
-export function defineEventBus<T extends EventDefinition>(events: T = {} as T) {
+export function defineEventBus<T extends EventDefinition>(_: T = {} as T) {
     // Type for event callbacks mapped to their parameter types
     type EventCallbacks = {
-        [K in keyof T]: (...args: T[K]) => void
+        [K in keyof T]: EventCallback
     }
 
     // Type-safe event listeners storage
