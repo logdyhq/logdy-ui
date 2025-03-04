@@ -1,25 +1,18 @@
 <script setup lang="ts">
-import { useMainStore } from '../store';
+import { useNotificationBarStore } from '../stores/notificationBar';
 
-const hide = () => {
-
-}
-
-const remind = () => {
-
-}
+const store = useNotificationBarStore()
 
 </script>
 
 <template>
-    <div class="update-bar" v-if="useMainStore().initSettings && useMainStore().initSettings?.updateVersion">
-        <span>🎉 New Logdy v{{ useMainStore().initSettings?.updateVersion.current_version }} available! {{
-            useMainStore().initSettings?.updateVersion.excerpt }} <a
-                :href="useMainStore().initSettings?.updateVersion.blog_link"
-                v-if="useMainStore().initSettings?.updateVersion.blog_link" target="_blank">Read
+    <div class="update-bar" v-if="store.updateResponse">
+        <span>🎉 New Logdy v{{ store.updateResponse.current_version }} available! {{
+            store.updateResponse.excerpt }} <a :href="store.updateResponse.blog_link"
+                v-if="store.updateResponse.blog_link" target="_blank">Read
                 more</a></span>
-        <button @click="hide">Hide</button>
-        <button @click="remind">Remind later</button>
+        <button @click="store.hide">Hide</button>
+        <button @click="store.remindLater">Remind later</button>
     </div>
 </template>
 
@@ -55,7 +48,7 @@ const remind = () => {
     button {
         padding: 3px 8px;
         font-size: 10px;
-        border-radius: 7px;
+        border-radius: 4px;
         margin-right: 4px;
     }
 }

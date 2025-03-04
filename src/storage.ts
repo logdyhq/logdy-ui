@@ -95,6 +95,20 @@ export class Storage<T extends { id?: string }> {
         localStorage.setItem(this.id(id), JSON.stringify(item))
     }
 
+    upsert(id: string, item: T) {
+        if (typeof item !== 'object') {
+            throw new Error("upsert is only available for objects")
+        }
+
+        let doc = this.getOne(id)
+
+        if (doc) {
+            this.update(id, { ...doc, ...item })
+        } else {
+            this.add(item, id)
+        }
+    }
+
     remove(id: string) {
         let _id = this.id(id)
         localStorage.removeItem(_id)

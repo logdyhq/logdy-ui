@@ -34,6 +34,7 @@ import TopBar from "./components/TopBar.vue"
 import Close from './components/icon/Close.vue';
 import { useContextMenuStore } from './stores/contextMenu';
 import { globalEventBus } from './event_bus';
+import { useNotificationBarStore } from './stores/notificationBar';
 
 const store = useMainStore()
 const storeFilter = useFilterStore()
@@ -557,6 +558,10 @@ const initWs = async (): Promise<boolean> => {
 
   store.initSettings = init.json!
 
+  if (init.json) {
+    useNotificationBarStore().processNotification(init.json?.updateVersion)
+  }
+
   let passValid = await client.sendGet("check-pass?password=" + store.getPassword())
   if (store.initSettings.authRequired && passValid.status !== 200) {
     store.modalShow = "auth"
@@ -606,10 +611,10 @@ const updateSampleLine = () => {
   <SettingsDrawer v-if="store.settingsDrawer" @close="store.settingsDrawer = false" :layout="(store.layout as Layout)"
     @edit="columnEdited" @remove="columnRemoved" @move="reorderColumns" @settings-update="settingsUpdate"
     @update-sample-line="updateSampleLine" :sampleLine="sampleLine" />
-  <UpdateBar v-if="store.notificationBar" />
+  <UpdateBar v-if="useNotificationBarStore().display" />
   <DemoBar v-if="store.demoMode" @start="store.demoStatus = 'started'" @stop="store.demoStatus = 'stopped'"
     @mode="changeDemoMode" @add="addDemoData(100)" />
-  <div :class="{ 'demo': store.demoMode, 'update': store.notificationBar }">
+  <div :class="{ 'demo': store.demoMode, 'update': useNotificationBarStore().display }">
     <div class="top-bar">
       <div class="left">
         <div class="logo">
@@ -636,7 +641,7 @@ const updateSampleLine = () => {
           <Close />
         </button>
         <span class="search-error" v-if="store.searchbarValid.length > 0">Invalid search query: {{ store.searchbarValid
-          }}.
+        }}.
           <br />
           <a href="https://logdy.dev/docs" target="_blank">Visit docs</a>
         </span>
