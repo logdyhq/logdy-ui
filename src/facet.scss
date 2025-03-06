@@ -27,9 +27,11 @@
         max-height: 150px;
         overflow-y: scroll;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        transition: 0s max-height;
 
         &:hover {
             max-height: 200px;
+            transition-delay:0.3s;
         }
 
         .facet-item {
