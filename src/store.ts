@@ -64,7 +64,7 @@ export const useMainStore = defineStore("main", () => {
     const confirmShow = ref<boolean>(false);
 
     const status = ref<"connected" | "not connected">("not connected")
-    const receiveStatus = ref<ReceiveStatus>("paused")
+    const receiveStatus = ref<ReceiveStatus>(demoMode.value ? "following" : "paused")
     const receiveCounters = ref<ReceiveCounters>({ LastDeliveredIdx: 0, MessageCount: 0, MessagesToTail: 0 })
     const anotherTab = ref<boolean>(false)
     const modalShow = ref<"" | "auth" | "import" | "export-logs" | "load-logs" | "feedback">("")
@@ -276,14 +276,23 @@ export const useMainStore = defineStore("main", () => {
             case 'following':
                 await client.resume()
                 receiveStatus.value = 'following';
+                if (demoMode.value) {
+                    demoStatus.value = 'started'
+                }
                 break;
             case 'following_cursor':
                 await client.resumeFromCursor()
                 receiveStatus.value = 'following_cursor';
+                if (demoMode.value) {
+                    demoStatus.value = 'started'
+                }
                 break;
             case 'paused':
                 await client.pause()
                 receiveStatus.value = 'paused';
+                if (demoMode.value) {
+                    demoStatus.value = 'stopped'
+                }
                 break;
         }
     }
